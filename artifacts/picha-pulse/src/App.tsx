@@ -60,6 +60,11 @@ const queryClient = new QueryClient();
 const SAVED_KEY = 'picha-pulse-saved';
 const mediaUrl = (objectPath: string) => `/api/storage${objectPath}`;
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 function readSaved(): number[] {
   try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); } catch { return []; }
 }
@@ -81,9 +86,25 @@ function AppShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: auth } = useGetCurrentAuthUser();
   const user = auth?.user;
+  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installDismissed, setInstallDismissed] = useState(false);
   const isActive = (path: string) => location === path;
   const login = () => { window.location.href = `/api/login?returnTo=${encodeURIComponent(window.location.pathname)}`; };
   const logout = () => { window.location.href = `/api/logout?returnTo=${encodeURIComponent(window.location.pathname)}`; };
+  useEffect(() => {
+    const captureInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallEvent(event as BeforeInstallPromptEvent);
+    };
+    window.addEventListener('beforeinstallprompt', captureInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', captureInstallPrompt);
+  }, []);
+  const install = async () => {
+    if (!installEvent) return;
+    await installEvent.prompt();
+    await installEvent.userChoice;
+    setInstallEvent(null);
+  };
   return (
     <div className="grain min-h-[100dvh] bg-background">
       <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-xl">
@@ -124,6 +145,29 @@ function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
       </header>
+      {installEvent && !installDismissed && (
+        <div className="border-b border-primary/20 bg-primary px-5 py-3 text-primary-foreground">
+          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 sm:px-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/15">
+                <Download size={17} />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold">Install Picha Pulse on your phone</p>
+                <p className="hidden text-xs text-primary-foreground/75 sm:block">Open the feed like an app from your home screen.</p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button onClick={install} data-testid="button-install-banner" className="rounded-full bg-primary-foreground px-4 py-2 text-xs font-bold text-primary transition-transform hover:-translate-y-0.5">
+                Install now
+              </button>
+              <button onClick={() => setInstallDismissed(true)} data-testid="button-dismiss-install-banner" aria-label="Dismiss install prompt" className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground/75 hover:bg-primary-foreground/15 hover:text-primary-foreground">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <main>{children}</main>
       <footer className="border-t border-border/80 bg-card">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
@@ -297,8 +341,6 @@ function AboutPage() {
   const install = async () => { if (installEvent) { await installEvent.prompt(); setInstallEvent(null); } else setShowGuide(true); };
   return <div className="pulse-grid"><section className="mx-auto max-w-[1440px] px-5 pb-16 pt-14 sm:px-8 sm:pt-24"><div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr]"><div><span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">About the pulse</span><h1 className="mt-4 max-w-3xl font-display text-6xl font-bold leading-[.86] tracking-[-.08em] sm:text-8xl">Kenya,<br /><span className="text-primary">in frame.</span></h1><p className="mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground">Picha Pulse is a daily window into what people across Kenya are seeing, making, trading, and talking about right now.</p></div><div className="flex min-h-[280px] flex-col justify-between rounded-[1.5rem] bg-primary p-7 text-primary-foreground"><div className="flex justify-between"><span className="font-display text-xl font-bold tracking-[-.05em]">picha<span className="text-accent">pulse</span></span><ArrowUpRight size={23} /></div><p className="max-w-xs font-display text-3xl font-bold leading-tight">The people closest to the moment tell it best.</p><span className="font-mono-ui text-[10px] uppercase tracking-[.18em] text-primary-foreground/65">Built for the everyday extraordinary</span></div></div></section><section className="border-y border-border bg-card"><div className="mx-auto grid max-w-[1440px] gap-0 px-5 sm:grid-cols-3 sm:px-8">{[['01', 'Look around', 'Browse trade photography and short community clips from all over the country.'], ['02', 'Keep what matters', 'Save the moments you want to find again. No account needed for your personal pocket.'], ['03', 'Put it on the map', 'Log in, upload a photo or clip, and give your corner of Kenya a little context.']].map(([number, title, body]) => <div key={number} className="border-b border-border py-8 sm:border-b-0 sm:border-r sm:px-8 sm:py-12 sm:first:pl-0 sm:last:border-r-0"><span className="font-mono-ui text-xs text-primary">{number}</span><h2 className="mt-8 font-display text-2xl font-bold tracking-[-.04em]">{title}</h2><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p></div>)}</div></section><section className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 sm:py-24"><div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr]"><div><span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">Carry it with you</span><h2 className="mt-3 font-display text-4xl font-bold tracking-[-.06em] sm:text-6xl">A better<br />daily check-in.</h2></div><div className="rounded-[1.5rem] border border-border bg-card p-7 sm:p-10"><div className="flex items-start gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent"><MonitorDown size={23} /></div><div><h3 className="font-display text-2xl font-bold tracking-[-.04em]">Add Picha Pulse to your home screen</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">Open the feed like an app, without hunting for a tab. It is quick, lightweight, and made for the daily scroll.</p><button onClick={install} data-testid="button-install-app" className="mt-6 inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-3 text-sm font-bold text-secondary-foreground transition-transform hover:-translate-y-0.5">{installEvent ? <Download size={16} /> : <ExternalLink size={16} />} {installEvent ? 'Add to home screen' : 'Show install steps'}</button></div></div>{showGuide && <div className="mt-4 rounded-xl bg-muted p-5 text-sm leading-relaxed"><p className="font-bold">On iPhone or iPad</p><p className="mt-1 text-muted-foreground">Open this page in Safari, tap the Share button, then choose “Add to Home Screen”.</p><p className="mt-4 font-bold">On Chrome</p><p className="mt-1 text-muted-foreground">Open the browser menu, then choose “Install Picha Pulse” or “Add to Home screen”.</p></div>}</div></div></section></div>;
 }
-
-interface BeforeInstallPromptEvent extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>; }
 
 function Router() {
   return <RoutedErrorBoundary><AppShell><Switch><Route path="/" component={Home} /><Route path="/upload" component={UploadPage} /><Route path="/saved" component={SavedPage} /><Route path="/about" component={AboutPage} /><Route path="/media/:id" component={MediaDetail} /><Route component={NotFound} /></Switch></AppShell></RoutedErrorBoundary>;
