@@ -1,6 +1,6 @@
-# [Project name]
+# Picha Pulse
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Picha Pulse is a Kenya-focused media board for browsing and sharing trade photography and short community clips.
 
 ## Run & Operate
 
@@ -22,23 +22,40 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/picha-pulse` — responsive Picha Pulse web app, PWA manifest, service worker, icon, feed, saved items, upload flow, full-screen media viewer, and install guide
+- `artifacts/api-server/src/routes/media.ts` — media catalog API
+- `artifacts/api-server/src/routes/storage.ts` — direct-to-object-storage upload and serving routes
+- `artifacts/api-server/src/routes/auth.ts` — browser and mobile authentication routes
+- `lib/db/src/schema/media.ts` — media metadata schema
+- `lib/db/src/schema/auth.ts` — user and session tables
+- `lib/api-spec/openapi.yaml` — API contract source of truth
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Uploaded bytes go directly to Replit App Storage through presigned URLs; PostgreSQL stores only searchable media metadata and object paths.
+- Uploads and publishing require authentication; browsing and public media viewing remain open.
+- Saved media is device-local so people can curate a personal pocket without creating an account.
+- The web app is installable as a PWA; the About page uses the native install prompt when available and gives Safari/Chrome fallback instructions.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Browse recent Kenyan trade photos and short clips
+- Search by title, description, and location
+- Filter photos and video clips
+- Open images full-screen with zoom controls
+- Open videos in a focused player with playback controls
+- Save moments locally on the current device
+- Sign in and publish image/video media with title, description, and location
+- Install Picha Pulse to a phone home screen
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- The app uses a tasteful, non-explicit romantic adult portrait for its icon rather than explicit sexual imagery.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Regenerate the API client and Zod validators after changing `lib/api-spec/openapi.yaml`.
+- Keep object paths in the `/objects/...` form returned by the upload URL endpoint and serve them as `/api/storage${objectPath}`.
 
 ## Pointers
 

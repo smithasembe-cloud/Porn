@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Picha Pulse"
+description = "A Kenya-focused media marketplace for browsing and uploading trade photography, short viral clips, and community media with full-screen viewing and easy phone installation."
+version = "1.0.0"
+id = "artifacts/picha-pulse"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24803
+
+[services.development]
+run = "pnpm --filter @workspace/picha-pulse run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/picha-pulse", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/picha-pulse/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24803"
+BASE_PATH = "/"

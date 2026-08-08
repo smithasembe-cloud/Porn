@@ -1,0 +1,19 @@
+{
+  "name": "Picha Pulse",
+  "short_name": "Picha Pulse",
+  "description": "What Kenya is seeing now.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f1e8",
+  "theme_color": "#e65d42",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/picha-pulse-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

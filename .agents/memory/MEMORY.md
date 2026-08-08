@@ -1,0 +1,1 @@
+- [Picha Pulse media architecture](picha-pulse-media-architecture.md) — user media bytes live in App Storage while PostgreSQL stores searchable metadata and object paths.
