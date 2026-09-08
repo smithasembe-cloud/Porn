@@ -16,6 +16,8 @@ export interface MediaInput {
   mimeType: string;
   /** @minLength 1 */
   objectPath: string;
+  /** @nullable */
+  thumbnailObjectPath?: string | null;
   location?: string;
   uploaderName?: string;
 }

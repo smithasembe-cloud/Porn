@@ -21,5 +21,6 @@ export * from './mediaInputType';
 export * from './mediaType';
 export * from './mobileTokenExchangeRequest';
 export * from './mobileTokenExchangeSuccess';
+export * from './siteVisitorCount';
 export * from './uploadUrlRequest';
 export * from './uploadUrlResponse';

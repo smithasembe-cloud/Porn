@@ -16,6 +16,8 @@ tags:
     description: Direct-to-object-storage uploads and serving.
   - name: Media
     description: Trade photos and short community video uploads.
+  - name: Site stats
+    description: Lightweight public site counters.
 paths:
   /healthz:
     get:
@@ -267,6 +269,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /site/visitors:
+    get:
+      tags: [Site stats]
+      operationId: getSiteVisitorCount
+      summary: Get the public visitor count
+      responses:
+        "200":
+          description: Current visitor count.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteVisitorCount"
+  /site/visitors/visit:
+    post:
+      tags: [Site stats]
+      operationId: recordSiteVisit
+      summary: Count one visitor session
+      responses:
+        "200":
+          description: Updated visitor count.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteVisitorCount"
 components:
   parameters:
     AuthorizationSessionHeader:
@@ -348,7 +374,7 @@ components:
           $ref: "#/components/schemas/UploadUrlRequest"
     Media:
       type: object
-      required: [id, title, description, type, mimeType, objectPath, location, uploaderName, createdAt, views]
+      required: [id, title, description, type, mimeType, objectPath, thumbnailObjectPath, location, uploaderName, createdAt, views]
       properties:
         id: { type: number }
         title: { type: string }
@@ -356,6 +382,7 @@ components:
         type: { type: string, enum: [image, video] }
         mimeType: { type: string }
         objectPath: { type: string }
+        thumbnailObjectPath: { type: [string, "null"] }
         location: { type: string }
         uploaderName: { type: string }
         createdAt: { type: string, format: date-time }
@@ -369,6 +396,12 @@ components:
         type: { type: string, enum: [image, video] }
         mimeType: { type: string, minLength: 1 }
         objectPath: { type: string, minLength: 1 }
+        thumbnailObjectPath: { type: [string, "null"] }
         location: { type: string }
         uploaderName: { type: string }
+    SiteVisitorCount:
+      type: object
+      required: [count]
+      properties:
+        count: { type: number, minimum: 0 }
 

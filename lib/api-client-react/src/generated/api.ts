@@ -30,6 +30,7 @@ import type {
   MediaInput,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
+  SiteVisitorCount,
   UploadUrlRequest,
   UploadUrlResponse
 } from './api.schemas';
@@ -1052,4 +1053,152 @@ export function useGetMedia<TData = Awaited<ReturnType<typeof getMedia>>, TError
 
 
 
+
+export const getGetSiteVisitorCountUrl = () => {
+
+
+
+
+  return `/api/site/visitors`
+}
+
+/**
+ * @summary Get the public visitor count
+ */
+export const getSiteVisitorCount = async ( options?: Parameters<typeof customFetch>[1]): Promise<SiteVisitorCount> => {
+
+  return customFetch<SiteVisitorCount>(getGetSiteVisitorCountUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSiteVisitorCountQueryKey = () => {
+    return [
+    `/api/site/visitors`
+    ] as const;
+    }
+
+
+export const getGetSiteVisitorCountQueryOptions = <TData = Awaited<ReturnType<typeof getSiteVisitorCount>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteVisitorCount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSiteVisitorCountQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSiteVisitorCount>>> = ({ signal }) => getSiteVisitorCount({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSiteVisitorCount>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSiteVisitorCountQueryResult = NonNullable<Awaited<ReturnType<typeof getSiteVisitorCount>>>
+export type GetSiteVisitorCountQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the public visitor count
+ */
+
+export function useGetSiteVisitorCount<TData = Awaited<ReturnType<typeof getSiteVisitorCount>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteVisitorCount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSiteVisitorCountQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordSiteVisitUrl = () => {
+
+
+
+
+  return `/api/site/visitors/visit`
+}
+
+/**
+ * @summary Count one visitor session
+ */
+export const recordSiteVisit = async ( options?: Parameters<typeof customFetch>[1]): Promise<SiteVisitorCount> => {
+
+  return customFetch<SiteVisitorCount>(getRecordSiteVisitUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRecordSiteVisitMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordSiteVisit>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordSiteVisit>>, TError,void, TContext> => {
+
+const mutationKey = ['recordSiteVisit'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordSiteVisit>>, void> = () => {
+
+
+          return  recordSiteVisit(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordSiteVisitMutationResult = NonNullable<Awaited<ReturnType<typeof recordSiteVisit>>>
+
+    export type RecordSiteVisitMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Count one visitor session
+ */
+export const useRecordSiteVisit = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordSiteVisit>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordSiteVisit>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRecordSiteVisitMutationOptions(options));
+    }
 

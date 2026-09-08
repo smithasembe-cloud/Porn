@@ -9,6 +9,8 @@ import {
   useGetMedia,
   useListMedia,
   useRequestUploadUrl,
+  useGetSiteVisitorCount,
+  useRecordSiteVisit,
   getGetCurrentAuthUserQueryKey,
   getGetMediaQueryKey,
   getListMediaQueryKey,
@@ -23,6 +25,7 @@ import {
   CircleAlert,
   Clock3,
   Download,
+  Eye,
   ExternalLink,
   FileImage,
   FileVideo,
@@ -59,6 +62,7 @@ import NotFound from '@/pages/not-found';
 const queryClient = new QueryClient();
 const SAVED_KEY = 'picha-pulse-saved';
 const mediaUrl = (objectPath: string) => `/api/storage${objectPath}`;
+const VISITOR_SESSION_KEY = 'picha-pulse-visitor-session';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -77,6 +81,56 @@ function formatWhen(date: string) {
   return new Intl.DateTimeFormat('en-KE', { day: 'numeric', month: 'short' }).format(new Date(date));
 }
 
+async function createVideoPoster(file: File): Promise<File> {
+  const sourceUrl = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.preload = 'metadata';
+  video.muted = true;
+  video.playsInline = true;
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      video.onloadedmetadata = () => {
+        const targetTime = Number.isFinite(video.duration) && video.duration > 0
+          ? Math.min(0.5, Math.max(0.05, video.duration / 3))
+          : 0.1;
+        video.currentTime = targetTime;
+      };
+      video.onseeked = () => resolve();
+      video.onerror = () => reject(new Error('This video could not be previewed.'));
+      video.src = sourceUrl;
+      video.load();
+    });
+
+    const maxWidth = 1280;
+    const scale = Math.min(1, maxWidth / Math.max(video.videoWidth, 1));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+    canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.86));
+    if (!blob) throw new Error('This video could not produce a preview image.');
+    return new File([blob], `${file.name.replace(/\.[^/.]+$/, '')}-poster.jpg`, { type: 'image/jpeg' });
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+    video.removeAttribute('src');
+    video.load();
+  }
+}
+
+function VisitorSession() {
+  const recordVisit = useRecordSiteVisit();
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (sessionStorage.getItem(VISITOR_SESSION_KEY)) return;
+    void recordVisit.mutateAsync(undefined).then((count) => {
+      sessionStorage.setItem(VISITOR_SESSION_KEY, 'counted');
+      queryClient.setQueryData(['/api/site/visitors'], count);
+    }).catch(() => undefined);
+  }, [queryClient, recordVisit]);
+  return null;
+}
+
 function initials(name?: string | null) {
   return (name || 'PP').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -85,6 +139,7 @@ function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: auth } = useGetCurrentAuthUser();
+  const { data: siteVisitors } = useGetSiteVisitorCount();
   const user = auth?.user;
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installDismissed, setInstallDismissed] = useState(false);
@@ -122,6 +177,10 @@ function AppShell({ children }: { children: ReactNode }) {
             <Link href="/about" data-testid="link-nav-about" className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${isActive('/about') ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>About</Link>
           </nav>
           <div className="flex items-center gap-2">
+            <span className="hidden items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 font-mono-ui text-[10px] text-muted-foreground sm:flex" title="Picha Pulse visitors">
+              <Eye size={13} className="text-primary" />
+              {siteVisitors?.count?.toLocaleString('en-KE') ?? '—'}
+            </span>
             <Link href="/upload" data-testid="link-header-upload" className="hidden items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-transform hover:-translate-y-0.5 sm:flex">
               <Plus size={16} strokeWidth={2.5} /> Share a moment
             </Link>
@@ -183,7 +242,8 @@ function MediaVisual({ media, className = '', eager = false }: { media: Media; c
   const src = mediaUrl(media.objectPath);
   return media.type === 'video' ? (
     <div className={`relative overflow-hidden bg-secondary ${className}`}>
-      <video src={src} muted playsInline preload={eager ? 'metadata' : 'none'} className="h-full w-full object-cover" />
+      {media.thumbnailObjectPath ? <img src={mediaUrl(media.thumbnailObjectPath)} alt={`${media.title} video poster`} loading={eager ? 'eager' : 'lazy'} className="h-full w-full object-cover" /> : <video src={src} muted playsInline preload={eager ? 'metadata' : 'none'} className="h-full w-full object-cover" />}
+      <span className="absolute inset-0 flex items-center justify-center bg-foreground/10"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg"><Play size={18} fill="currentColor" /></span></span>
       <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-foreground/75 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-background"><Play size={11} fill="currentColor" /> Clip</span>
     </div>
   ) : <img src={src} alt={media.title} loading={eager ? 'eager' : 'lazy'} className={`h-full w-full object-cover ${className}`} />;
@@ -284,7 +344,7 @@ function MediaDetail() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [location, setLocation] = useLocation();
   const share = async () => { if (navigator.share && media) await navigator.share({ title: media.title, text: media.description, url: window.location.href }); else await navigator.clipboard?.writeText(window.location.href); };
-  useEffect(() => { if (videoRef.current && media?.type === 'video') { videoRef.current.play().catch(() => setPlaying(false)); } }, [media]);
+  useEffect(() => { if (videoRef.current && media?.type === 'video') { if (media.thumbnailObjectPath) videoRef.current.poster = mediaUrl(media.thumbnailObjectPath); videoRef.current.play().catch(() => setPlaying(false)); } }, [media]);
   if (mediaQuery.isLoading) return <div className="flex min-h-[75dvh] items-center justify-center"><LoaderCircle className="animate-spin-soft text-primary" /></div>;
   if (mediaQuery.isError || !media) return <div className="mx-auto max-w-lg px-5 py-24 text-center"><CircleAlert className="mx-auto mb-4 text-destructive" /><h1 className="font-display text-2xl font-bold">This moment moved on.</h1><p className="mt-2 text-sm text-muted-foreground">We could not load that media.</p><button onClick={() => mediaQuery.refetch()} data-testid="button-retry-media" className="mt-5 rounded-full bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground">Try again</button></div>;
   return <div className="min-h-[calc(100dvh-4.5rem)] bg-secondary text-secondary-foreground"><div className="mx-auto grid min-h-[calc(100dvh-4.5rem)] max-w-[1440px] lg:grid-cols-[1.35fr_.65fr]"><div className="relative flex min-h-[55dvh] items-center justify-center overflow-hidden bg-foreground p-5 lg:min-h-0"><button onClick={() => setLocation('/')} data-testid="button-detail-back" className="absolute left-5 top-5 z-10 flex items-center gap-2 rounded-full bg-background/80 px-3 py-2 text-xs font-bold text-foreground backdrop-blur-md"><ArrowLeft size={15} /> Back to pulse</button>{media.type === 'video' ? <div className="relative max-h-full w-full max-w-4xl"><video ref={videoRef} src={mediaUrl(media.objectPath)} controls playsInline className="max-h-[75dvh] w-full object-contain" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} /><button onClick={() => { if (videoRef.current?.paused) videoRef.current.play(); else videoRef.current?.pause(); }} data-testid="button-video-play" className="absolute bottom-14 left-5 flex h-10 w-10 items-center justify-center rounded-full bg-background/85 text-foreground">{playing ? <Pause size={17} /> : <Play size={17} fill="currentColor" />}</button></div> : <div className="relative flex h-full max-h-[85dvh] w-full items-center justify-center overflow-auto"><img src={mediaUrl(media.objectPath)} alt={media.title} style={{ transform: `scale(${zoom})` }} className="max-h-full max-w-full object-contain transition-transform duration-300" /><div className="absolute bottom-5 right-5 flex items-center gap-1 rounded-full bg-background/85 p-1 text-foreground backdrop-blur-md"><button onClick={() => setZoom(Math.max(1, zoom - .25))} data-testid="button-zoom-out" className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"><ZoomOut size={16} /></button><span className="font-mono-ui px-1 text-[10px]">{Math.round(zoom * 100)}%</span><button onClick={() => setZoom(Math.min(2.5, zoom + .25))} data-testid="button-zoom-in" className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"><ZoomIn size={16} /></button></div></div>}</div><aside className="flex flex-col justify-between p-6 sm:p-10 lg:p-14"><div><div className="mb-8 flex items-center justify-between"><span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-accent">{media.type === 'image' ? 'Trade still' : 'Community clip'}</span><div className="flex gap-2"><SaveButton id={media.id} /><button onClick={share} data-testid="button-share-media" className="flex h-9 w-9 items-center justify-center rounded-full border border-secondary-foreground/20 transition-colors hover:bg-secondary-foreground/10"><Share2 size={16} /></button></div></div><h1 className="max-w-xl font-display text-4xl font-bold leading-[.98] tracking-[-.06em] sm:text-6xl">{media.title}</h1><p className="mt-6 max-w-lg text-sm leading-relaxed text-secondary-foreground/75 sm:text-base">{media.description || 'A moment shared from the community.'}</p><div className="mt-9 flex flex-wrap gap-2"><span className="flex items-center gap-2 rounded-full bg-secondary-foreground/10 px-3 py-2 text-xs"><MapPin size={13} className="text-accent" /> {media.location || 'Kenya'}</span><span className="flex items-center gap-2 rounded-full bg-secondary-foreground/10 px-3 py-2 text-xs"><Clock3 size={13} className="text-accent" /> {formatWhen(media.createdAt)}</span><span className="rounded-full bg-secondary-foreground/10 px-3 py-2 font-mono-ui text-[10px]">{media.views.toLocaleString('en-KE')} views</span></div></div><div className="mt-12 border-t border-secondary-foreground/15 pt-5"><p className="font-mono-ui text-[10px] uppercase tracking-widest text-secondary-foreground/55">Shared by</p><p className="mt-2 font-display text-lg font-bold">{media.uploaderName || 'A neighbour'}</p></div></aside></div></div>;
@@ -299,7 +359,7 @@ function UploadPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [stage, setStage] = useState<'idle' | 'requesting' | 'uploading' | 'publishing' | 'done' | 'error'>('idle');
+  const [stage, setStage] = useState<'idle' | 'thumbnailing' | 'requesting' | 'uploading' | 'publishing' | 'done' | 'error'>('idle');
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -308,13 +368,22 @@ function UploadPage() {
     if (!file || !title.trim()) return;
     setError('');
     try {
+      let thumbnailObjectPath: string | undefined;
+      if (file.type.startsWith('video/')) {
+        setStage('thumbnailing');
+        const poster = await createVideoPoster(file);
+        const posterResponse = await requestUpload.mutateAsync({ data: { name: poster.name, size: poster.size, contentType: poster.type } });
+        const posterUpload = await fetch(posterResponse.uploadURL, { method: 'PUT', headers: { 'Content-Type': poster.type }, body: poster });
+        if (!posterUpload.ok) throw new Error('Video preview upload did not complete');
+        thumbnailObjectPath = posterResponse.objectPath;
+      }
       setStage('requesting');
       const response = await requestUpload.mutateAsync({ data: { name: file.name, size: file.size, contentType: file.type } });
       setStage('uploading');
       const upload = await fetch(response.uploadURL, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
       if (!upload.ok) throw new Error('Upload did not complete');
       setProgress(100); setStage('publishing');
-      await createMedia.mutateAsync({ data: { title: title.trim(), description: description.trim(), location: location.trim(), type: file.type.startsWith('video/') ? 'video' : 'image', mimeType: file.type, objectPath: response.objectPath, uploaderName: `${auth?.user?.firstName || ''} ${auth?.user?.lastName || ''}`.trim() || undefined } });
+      await createMedia.mutateAsync({ data: { title: title.trim(), description: description.trim(), location: location.trim(), type: file.type.startsWith('video/') ? 'video' : 'image', mimeType: file.type, objectPath: response.objectPath, thumbnailObjectPath, uploaderName: `${auth?.user?.firstName || ''} ${auth?.user?.lastName || ''}`.trim() || undefined } });
       await queryClient.invalidateQueries({ queryKey: getListMediaQueryKey() });
       setStage('done');
     } catch (caught) { setStage('error'); setError(caught instanceof Error ? caught.message : 'Something went wrong. Please try again.'); }
@@ -352,7 +421,7 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function App() {
-  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Router /></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
+  return <QueryClientProvider client={queryClient}><VisitorSession /><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Router /></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
 }
 
 export default App;

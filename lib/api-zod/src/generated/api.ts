@@ -160,6 +160,7 @@ export const ListMediaResponseItem = zod.object({
   "type": zod.enum(['image', 'video']),
   "mimeType": zod.string(),
   "objectPath": zod.string(),
+  "thumbnailObjectPath": zod.string().nullable(),
   "location": zod.string(),
   "uploaderName": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -182,6 +183,7 @@ export const CreateMediaBody = zod.object({
   "type": zod.enum(['image', 'video']),
   "mimeType": zod.string().min(1),
   "objectPath": zod.string().min(1),
+  "thumbnailObjectPath": zod.string().nullish(),
   "location": zod.string().optional(),
   "uploaderName": zod.string().optional()
 })
@@ -193,6 +195,7 @@ export const CreateMediaResponse = zod.object({
   "type": zod.enum(['image', 'video']),
   "mimeType": zod.string(),
   "objectPath": zod.string(),
+  "thumbnailObjectPath": zod.string().nullable(),
   "location": zod.string(),
   "uploaderName": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -214,10 +217,35 @@ export const GetMediaResponse = zod.object({
   "type": zod.enum(['image', 'video']),
   "mimeType": zod.string(),
   "objectPath": zod.string(),
+  "thumbnailObjectPath": zod.string().nullable(),
   "location": zod.string(),
   "uploaderName": zod.string(),
   "createdAt": zod.coerce.date(),
   "views": zod.number()
+})
+
+
+/**
+ * @summary Get the public visitor count
+ */
+export const getSiteVisitorCountResponseCountMin = 0;
+
+
+
+export const GetSiteVisitorCountResponse = zod.object({
+  "count": zod.number().min(getSiteVisitorCountResponseCountMin)
+})
+
+
+/**
+ * @summary Count one visitor session
+ */
+export const recordSiteVisitResponseCountMin = 0;
+
+
+
+export const RecordSiteVisitResponse = zod.object({
+  "count": zod.number().min(recordSiteVisitResponseCountMin)
 })
 
 

@@ -81,6 +81,8 @@ export interface Media {
   type: MediaType;
   mimeType: string;
   objectPath: string;
+  /** @nullable */
+  thumbnailObjectPath: string | null;
   location: string;
   uploaderName: string;
   createdAt: string;
@@ -104,8 +106,15 @@ export interface MediaInput {
   mimeType: string;
   /** @minLength 1 */
   objectPath: string;
+  /** @nullable */
+  thumbnailObjectPath?: string | null;
   location?: string;
   uploaderName?: string;
+}
+
+export interface SiteVisitorCount {
+  /** @minimum 0 */
+  count: number;
 }
 
 export type AuthorizationSessionHeaderParameter = string;

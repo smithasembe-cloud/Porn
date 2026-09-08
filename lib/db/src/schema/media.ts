@@ -8,6 +8,7 @@ export const mediaTable = pgTable("media", {
   type: varchar("type", { length: 10 }).notNull(),
   mimeType: varchar("mime_type", { length: 120 }).notNull(),
   objectPath: text("object_path").notNull(),
+  thumbnailObjectPath: text("thumbnail_object_path"),
   location: varchar("location", { length: 120 }).notNull().default("Kenya"),
   uploaderName: varchar("uploader_name", { length: 120 }).notNull().default("Picha community"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -20,6 +21,7 @@ export const insertMediaSchema = z.object({
   type: z.enum(["image", "video"]),
   mimeType: z.string().min(1),
   objectPath: z.string().min(1),
+  thumbnailObjectPath: z.string().min(1).nullable().optional(),
   location: z.string().default("Kenya"),
   uploaderName: z.string().default("Picha community"),
 });

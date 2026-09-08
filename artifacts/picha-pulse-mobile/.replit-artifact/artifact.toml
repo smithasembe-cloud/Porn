@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/picha-pulse-mobile/"
+title = "Picha Pulse Mobile"
+description = "A native Android companion for Picha Pulse that browses Kenya-focused community media, authenticates publishers, and shares uploads through the existing API, PostgreSQL catalog, and object storage backend."
+version = "1.0.0"
+id = "artifacts/picha-pulse-mobile"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/picha-pulse-mobile/" ]
+localPort = 25681
+
+[services.development]
+run = "pnpm --filter @workspace/picha-pulse-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/picha-pulse-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/picha-pulse-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "25681"
+BASE_PATH = "/picha-pulse-mobile/"

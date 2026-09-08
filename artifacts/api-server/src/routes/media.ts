@@ -9,8 +9,35 @@ import {
 import { db, mediaTable } from "@workspace/db";
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import { Router, type IRouter, type Request, type Response } from "express";
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { ObjectStorageService } from "../lib/objectStorage";
 
 const router: IRouter = Router();
+const objectStorageService = new ObjectStorageService();
+const execFileAsync = promisify(execFile);
+
+async function createVideoThumbnail(objectPath: string): Promise<string | null> {
+  const source = await objectStorageService.getObjectEntityFile(objectPath);
+  const [video] = await source.download();
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "picha-pulse-"));
+  const inputPath = path.join(tempDir, "source-video");
+  const outputPath = path.join(tempDir, "poster.jpg");
+  try {
+    await fs.writeFile(inputPath, video);
+    await execFileAsync("ffmpeg", ["-y", "-ss", "0", "-i", inputPath, "-frames:v", "1", "-q:v", "2", outputPath], { timeout: 30_000 });
+    const poster = await fs.readFile(outputPath);
+    const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+    const upload = await fetch(uploadURL, { method: "PUT", headers: { "Content-Type": "image/jpeg" }, body: poster });
+    if (!upload.ok) throw new Error(`Poster upload failed with ${upload.status}`);
+    return objectStorageService.normalizeObjectEntityPath(uploadURL);
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  }
+}
 
 router.get("/media", async (req: Request, res: Response): Promise<void> => {
   const parsed = ListMediaQueryParams.safeParse(req.query);
@@ -57,10 +84,20 @@ router.post("/media", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
+  let thumbnailObjectPath = parsed.data.thumbnailObjectPath ?? null;
+  if (parsed.data.type === "video" && !thumbnailObjectPath) {
+    try {
+      thumbnailObjectPath = await createVideoThumbnail(parsed.data.objectPath);
+    } catch (error) {
+      req.log.warn({ err: error, objectPath: parsed.data.objectPath }, "Could not generate video poster");
+    }
+  }
+
   const [row] = await db
     .insert(mediaTable)
     .values({
       ...parsed.data,
+      thumbnailObjectPath,
       description: parsed.data.description ?? "",
       location: parsed.data.location ?? "Kenya",
       uploaderName:

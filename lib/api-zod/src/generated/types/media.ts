@@ -14,6 +14,8 @@ export interface Media {
   type: MediaType;
   mimeType: string;
   objectPath: string;
+  /** @nullable */
+  thumbnailObjectPath: string | null;
   location: string;
   uploaderName: string;
   createdAt: Date;
