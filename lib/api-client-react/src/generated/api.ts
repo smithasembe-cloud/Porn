@@ -30,6 +30,7 @@ import type {
   MediaInput,
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
+  RelatedMediaImages,
   SiteVisitorCount,
   UploadUrlRequest,
   UploadUrlResponse
@@ -1042,6 +1043,83 @@ export function useGetMedia<TData = Awaited<ReturnType<typeof getMedia>>, TError
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetMediaQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetRelatedMediaImagesUrl = (id: number,) => {
+
+
+
+
+  return `/api/media/${id}/related`
+}
+
+/**
+ * @summary Get four online images related to a media item
+ */
+export const getRelatedMediaImages = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<RelatedMediaImages> => {
+
+  return customFetch<RelatedMediaImages>(getGetRelatedMediaImagesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRelatedMediaImagesQueryKey = (id: number,) => {
+    return [
+    `/api/media/${id}/related`
+    ] as const;
+    }
+
+
+export const getGetRelatedMediaImagesQueryOptions = <TData = Awaited<ReturnType<typeof getRelatedMediaImages>>, TError = ErrorType<ErrorEnvelope>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRelatedMediaImages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRelatedMediaImagesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRelatedMediaImages>>> = ({ signal }) => getRelatedMediaImages(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRelatedMediaImages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRelatedMediaImagesQueryResult = NonNullable<Awaited<ReturnType<typeof getRelatedMediaImages>>>
+export type GetRelatedMediaImagesQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary Get four online images related to a media item
+ */
+
+export function useGetRelatedMediaImages<TData = Awaited<ReturnType<typeof getRelatedMediaImages>>, TError = ErrorType<ErrorEnvelope>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRelatedMediaImages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRelatedMediaImagesQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -269,6 +269,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /media/{id}/related:
+    get:
+      tags: [Media]
+      operationId: getRelatedMediaImages
+      summary: Get four online images related to a media item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Related public images, refreshed hourly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RelatedMediaImages"
+        "404":
+          description: Media not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
   /site/visitors:
     get:
       tags: [Site stats]
@@ -404,4 +428,23 @@ components:
       required: [count]
       properties:
         count: { type: number, minimum: 0 }
+    RelatedMediaImages:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          maxItems: 4
+          items:
+            $ref: "#/components/schemas/RelatedMediaImage"
+    RelatedMediaImage:
+      type: object
+      required: [title, imageUrl, sourceUrl, source]
+      properties:
+        title: { type: string }
+        imageUrl: { type: string }
+        sourceUrl: { type: string }
+        source: { type: string }
+        width: { type: number }
+        height: { type: number }
 

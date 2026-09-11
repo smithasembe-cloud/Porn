@@ -117,6 +117,20 @@ export interface SiteVisitorCount {
   count: number;
 }
 
+export interface RelatedMediaImage {
+  title: string;
+  imageUrl: string;
+  sourceUrl: string;
+  source: string;
+  width?: number;
+  height?: number;
+}
+
+export interface RelatedMediaImages {
+  /** @maxItems 4 */
+  items: RelatedMediaImage[];
+}
+
 export type AuthorizationSessionHeaderParameter = string;
 
 export type BeginBrowserLoginParams = {

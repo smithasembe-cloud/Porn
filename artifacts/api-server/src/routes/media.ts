@@ -19,6 +19,16 @@ import { ObjectStorageService } from "../lib/objectStorage";
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
 const execFileAsync = promisify(execFile);
+const relatedCache = new Map<number, { expiresAt: number; items: RelatedImage[] }>();
+
+type RelatedImage = {
+  title: string;
+  imageUrl: string;
+  sourceUrl: string;
+  source: string;
+  width?: number;
+  height?: number;
+};
 
 async function createVideoThumbnail(objectPath: string): Promise<string | null> {
   const source = await objectStorageService.getObjectEntityFile(objectPath);
@@ -109,6 +119,76 @@ router.post("/media", async (req: Request, res: Response): Promise<void> => {
     .returning();
 
   res.status(201).json(CreateMediaResponse.parse(row));
+});
+
+router.get("/media/:id/related", async (req: Request, res: Response): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ error: "Invalid media id" });
+    return;
+  }
+  const cached = relatedCache.get(id);
+  if (cached && cached.expiresAt > Date.now()) {
+    res.json({ items: cached.items });
+    return;
+  }
+
+  const [media] = await db.select().from(mediaTable).where(eq(mediaTable.id, id));
+  if (!media) {
+    res.status(404).json({ error: "Media not found" });
+    return;
+  }
+
+  const searchTerms = [media.title, media.location, media.description, "Kenya"]
+    .filter((value) => value?.trim())
+    .join(" ");
+  const hourBucket = Math.floor(Date.now() / 3_600_000);
+  const offset = (hourBucket * 4) % 16;
+  const params = new URLSearchParams({
+    action: "query",
+    generator: "search",
+    gsrsearch: searchTerms,
+    gsrnamespace: "6",
+    gsrlimit: "20",
+    gsroffset: String(offset),
+    prop: "imageinfo|info",
+    iiprop: "url|mime|size",
+    iiurlwidth: "900",
+    format: "json",
+    origin: "*",
+  });
+
+  try {
+    const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`, {
+      headers: { "User-Agent": "PichaPulse/1.0 related-media" },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!response.ok) throw new Error(`Wikimedia returned ${response.status}`);
+    const payload = await response.json() as {
+      query?: { pages?: Record<string, { title?: string; fullurl?: string; imageinfo?: Array<{ thumburl?: string; url?: string; mime?: string; thumbwidth?: number; thumbheight?: number }> }> };
+    };
+    const items = Object.values(payload.query?.pages ?? {})
+      .map((page): RelatedImage | null => {
+        const info = page.imageinfo?.[0];
+        const imageUrl = info?.thumburl || info?.url;
+        if (!imageUrl || !info?.mime?.startsWith("image/")) return null;
+        return {
+          title: (page.title || "Related image").replace(/^File:/, ""),
+          imageUrl,
+          sourceUrl: page.fullurl || `https://commons.wikimedia.org/wiki/${encodeURIComponent(page.title || "")}`,
+          source: "Wikimedia Commons",
+          width: info.thumbwidth,
+          height: info.thumbheight,
+        };
+      })
+      .filter((item): item is RelatedImage => Boolean(item))
+      .slice(0, 4);
+    relatedCache.set(id, { expiresAt: Date.now() + 3_600_000, items });
+    res.json({ items });
+  } catch (error) {
+    req.log.warn({ err: error, mediaId: id }, "Related image search unavailable");
+    res.json({ items: [] });
+  }
 });
 
 router.get("/media/:id", async (req: Request, res: Response): Promise<void> => {

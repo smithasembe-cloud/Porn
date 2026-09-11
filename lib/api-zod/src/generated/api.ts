@@ -226,6 +226,29 @@ export const GetMediaResponse = zod.object({
 
 
 /**
+ * @summary Get four online images related to a media item
+ */
+export const GetRelatedMediaImagesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const getRelatedMediaImagesResponseItemsMax = 4;
+
+
+
+export const GetRelatedMediaImagesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "title": zod.string(),
+  "imageUrl": zod.string(),
+  "sourceUrl": zod.string(),
+  "source": zod.string(),
+  "width": zod.number().optional(),
+  "height": zod.number().optional()
+})).max(getRelatedMediaImagesResponseItemsMax)
+})
+
+
+/**
  * @summary Get the public visitor count
  */
 export const getSiteVisitorCountResponseCountMin = 0;
