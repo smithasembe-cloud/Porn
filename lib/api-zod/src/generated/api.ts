@@ -145,12 +145,13 @@ export const listMediaQueryTypeDefault = `all`;
 export const listMediaQueryLimitDefault = 30;
 export const listMediaQueryLimitMax = 100;
 
-
+export const listMediaQuerySortDefault = `newest`;
 
 export const ListMediaQueryParams = zod.object({
   "type": zod.enum(['all', 'image', 'video']).default(listMediaQueryTypeDefault),
   "q": zod.coerce.string().optional(),
-  "limit": zod.coerce.number().min(1).max(listMediaQueryLimitMax).default(listMediaQueryLimitDefault)
+  "limit": zod.coerce.number().min(1).max(listMediaQueryLimitMax).default(listMediaQueryLimitDefault),
+  "sort": zod.enum(['newest', 'trending']).default(listMediaQuerySortDefault)
 })
 
 export const ListMediaResponseItem = zod.object({

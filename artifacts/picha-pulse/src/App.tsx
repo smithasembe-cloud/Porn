@@ -118,6 +118,12 @@ async function createVideoPoster(file: File): Promise<File> {
   }
 }
 
+function validateUploadFile(file: File) {
+  const maxBytes = 100 * 1024 * 1024;
+  if (!['image/', 'video/'].some((prefix) => file.type.startsWith(prefix))) throw new Error('Choose a JPG, PNG, WEBP, GIF, MP4, or other supported image/video file.');
+  if (file.size <= 0 || file.size > maxBytes) throw new Error('That file is too large. Please choose a file under 100 MB.');
+}
+
 function VisitorSession() {
   const recordVisit = useRecordSiteVisit();
   const queryClient = useQueryClient();
@@ -286,7 +292,8 @@ function FeedSkeleton() {
 function Home() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'image' | 'video'>('all');
-  const params = useMemo(() => ({ type: filter, q: search.trim() || undefined, limit: 100 }), [filter, search]);
+  const [sort, setSort] = useState<'newest' | 'trending'>('newest');
+  const params = useMemo(() => ({ type: filter, q: search.trim() || undefined, sort, limit: 100 }), [filter, search, sort]);
   const mediaQuery = useListMedia(params);
   const media = mediaQuery.data || [];
   return (
@@ -316,6 +323,9 @@ function Home() {
           <div className="flex items-center gap-2">
             <span className="mr-1 hidden font-mono-ui text-[10px] uppercase tracking-widest text-muted-foreground sm:block">Show me</span>
             {(['all', 'image', 'video'] as const).map((type) => <button key={type} onClick={() => setFilter(type)} data-testid={`button-filter-${type}`} className={`rounded-full px-4 py-2 text-xs font-bold capitalize transition-all ${filter === type ? 'bg-secondary text-secondary-foreground' : 'bg-card text-muted-foreground hover:bg-muted'}`}>{type === 'all' ? 'Everything' : type === 'image' ? 'Photos' : 'Clips'}</button>)}
+          </div>
+          <div className="flex items-center gap-2">
+            {(['newest', 'trending'] as const).map((value) => <button key={value} onClick={() => setSort(value)} data-testid={`button-sort-${value}`} className={`rounded-full px-4 py-2 text-xs font-bold capitalize transition-all ${sort === value ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted'}`}>{value}</button>)}
           </div>
         </div>
       </section>
@@ -388,6 +398,7 @@ function UploadPage() {
     if (!file || !title.trim()) return;
     setError('');
     try {
+      validateUploadFile(file);
       let thumbnailObjectPath: string | undefined;
       if (file.type.startsWith('video/')) {
         setStage('thumbnailing');

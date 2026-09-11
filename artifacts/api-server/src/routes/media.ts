@@ -56,7 +56,7 @@ router.get("/media", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const { type, q, limit } = parsed.data;
+  const { type, q, limit, sort } = parsed.data;
   const filters = [];
   if (type !== "all") {
     filters.push(eq(mediaTable.type, type));
@@ -76,7 +76,7 @@ router.get("/media", async (req: Request, res: Response): Promise<void> => {
     .select()
     .from(mediaTable)
     .where(filters.length ? and(...filters) : undefined)
-    .orderBy(desc(mediaTable.createdAt))
+    .orderBy(sort === "trending" ? desc(mediaTable.views) : desc(mediaTable.createdAt), desc(mediaTable.createdAt))
     .limit(limit);
 
   res.json(ListMediaResponse.parse(rows));

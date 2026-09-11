@@ -10,7 +10,8 @@ export default function HomeScreen() {
   const colors = useColors();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'image' | 'video'>('all');
-  const params = useMemo(() => ({ type: filter, q: search.trim() || undefined, limit: 100 }), [filter, search]);
+  const [sort, setSort] = useState<'newest' | 'trending'>('newest');
+  const params = useMemo(() => ({ type: filter, q: search.trim() || undefined, sort, limit: 100 }), [filter, search, sort]);
   const mediaQuery = useListMedia(params);
   const visitorQuery = useGetSiteVisitorCount();
   const media = mediaQuery.data || [];
@@ -47,6 +48,10 @@ export default function HomeScreen() {
                 </Pressable>
               ))}
             </View>
+            <View style={styles.sorts}>
+              <Text style={[styles.showMe, { color: colors.mutedForeground }]}>ORDER</Text>
+              {(['newest', 'trending'] as const).map((value) => <Pressable key={value} onPress={() => setSort(value)} style={[styles.filter, { backgroundColor: sort === value ? colors.primary : colors.card }]}><Text style={{ color: sort === value ? colors.primaryForeground : colors.mutedForeground, fontSize: 12, fontWeight: '800' }}>{value === 'newest' ? 'Newest' : 'Trending'}</Text></Pressable>)}
+            </View>
             <View style={styles.sectionHeading}>
               <View><Text style={[styles.kicker, { color: colors.primary }]}>FRESH DROPS</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>The pulse right now</Text></View>
               <Text style={[styles.count, { color: colors.mutedForeground }]}>{media.length ? `${media.length} stories` : ''}</Text>
@@ -79,6 +84,7 @@ const styles = StyleSheet.create({
   searchWrap: { flexDirection: 'row', alignItems: 'center', height: 50, paddingHorizontal: 15, borderWidth: 1, borderRadius: 25 },
   search: { flex: 1, marginLeft: 10, fontSize: 13 },
   filters: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 15 },
+  sorts: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingBottom: 8 },
   showMe: { marginRight: 2, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
   filter: { paddingHorizontal: 11, paddingVertical: 9, borderRadius: 20 },
   sectionHeading: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingTop: 20, paddingBottom: 15 },

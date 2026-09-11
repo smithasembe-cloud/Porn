@@ -145,6 +145,7 @@ q?: string;
  * @maximum 100
  */
 limit?: number;
+sort?: ListMediaSort;
 };
 
 export type ListMediaType = typeof ListMediaType[keyof typeof ListMediaType];
@@ -154,5 +155,13 @@ export const ListMediaType = {
   all: 'all',
   image: 'image',
   video: 'video',
+} as const;
+
+export type ListMediaSort = typeof ListMediaSort[keyof typeof ListMediaSort];
+
+
+export const ListMediaSort = {
+  newest: 'newest',
+  trending: 'trending',
 } as const;
 

@@ -13,6 +13,7 @@ export * from './beginBrowserLoginParams';
 export * from './errorEnvelope';
 export * from './healthStatus';
 export * from './listMediaParams';
+export * from './listMediaSort';
 export * from './listMediaType';
 export * from './logoutSuccess';
 export * from './media';

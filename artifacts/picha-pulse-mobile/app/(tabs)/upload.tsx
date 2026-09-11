@@ -26,6 +26,10 @@ export default function UploadScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images', 'videos'], quality: 0.9 });
     if (!result.canceled) {
       const selected = result.assets[0];
+      if ((selected.fileSize || 0) > 100 * 1024 * 1024) {
+        Alert.alert('File too large', 'Please choose an image or video under 100 MB.');
+        return;
+      }
       setAsset(selected);
       setVideoPoster(null);
       if (selected.type === 'video') {

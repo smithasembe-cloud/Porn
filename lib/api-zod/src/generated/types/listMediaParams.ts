@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ListMediaSort } from './listMediaSort';
 import type { ListMediaType } from './listMediaType';
 
 export type ListMediaParams = {
@@ -15,4 +16,5 @@ q?: string;
  * @maximum 100
  */
 limit?: number;
+sort?: ListMediaSort;
 };
