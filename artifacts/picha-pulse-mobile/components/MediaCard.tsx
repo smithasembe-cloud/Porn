@@ -25,6 +25,7 @@ export function MediaCard({ media, onPress }: { media: Media; onPress: () => voi
         <Image source={{ uri: objectUrl(media.thumbnailObjectPath || media.objectPath) }} contentFit="cover" style={styles.image} />
         {media.type === 'video' && (
           <>
+            <View style={styles.videoShade} />
             <View style={styles.playOverlay}><View style={[styles.playButton, { backgroundColor: colors.background + 'EA' }]}><Feather name="play" size={17} color={colors.foreground} /></View></View>
             <View style={[styles.clipBadge, { backgroundColor: colors.foreground }]}>
               <Feather name="play" size={11} color={colors.background} />
@@ -57,6 +58,7 @@ const styles = StyleSheet.create({
   imageWrap: { aspectRatio: 1.25, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
   playOverlay: { position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' },
+  videoShade: { position: 'absolute', inset: 0, backgroundColor: 'rgba(13,34,43,.22)' },
   playButton: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 24 },
   clipBadge: { position: 'absolute', left: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 6, borderRadius: 20 },
   badgeText: { fontSize: 9, fontWeight: '800', letterSpacing: 1 },

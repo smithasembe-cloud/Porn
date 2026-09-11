@@ -20,6 +20,7 @@ const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
 const execFileAsync = promisify(execFile);
 const relatedCache = new Map<number, { expiresAt: number; items: RelatedImage[] }>();
+const thumbnailRepairAttempts = new Set<number>();
 
 type RelatedImage = {
   title: string;
@@ -46,6 +47,19 @@ async function createVideoThumbnail(objectPath: string): Promise<string | null> 
     return objectStorageService.normalizeObjectEntityPath(uploadURL);
   } finally {
     await fs.rm(tempDir, { recursive: true, force: true });
+  }
+}
+
+async function ensureVideoThumbnail(row: typeof mediaTable.$inferSelect) {
+  if (row.type !== "video" || row.thumbnailObjectPath || thumbnailRepairAttempts.has(row.id)) return row;
+  thumbnailRepairAttempts.add(row.id);
+  try {
+    const thumbnailObjectPath = await createVideoThumbnail(row.objectPath);
+    if (!thumbnailObjectPath) return row;
+    await db.update(mediaTable).set({ thumbnailObjectPath }).where(eq(mediaTable.id, row.id));
+    return { ...row, thumbnailObjectPath };
+  } catch {
+    return row;
   }
 }
 
@@ -79,7 +93,8 @@ router.get("/media", async (req: Request, res: Response): Promise<void> => {
     .orderBy(sort === "trending" ? desc(mediaTable.views) : desc(mediaTable.createdAt), desc(mediaTable.createdAt))
     .limit(limit);
 
-  res.json(ListMediaResponse.parse(rows));
+  const hydratedRows = await Promise.all(rows.map(ensureVideoThumbnail));
+  res.json(ListMediaResponse.parse(hydratedRows));
 });
 
 router.post("/media", async (req: Request, res: Response): Promise<void> => {
@@ -213,7 +228,8 @@ router.get("/media/:id", async (req: Request, res: Response): Promise<void> => {
     .set({ views: row.views + 1 })
     .where(eq(mediaTable.id, row.id));
 
-  res.json(GetMediaResponse.parse({ ...row, views: row.views + 1 }));
+  const hydratedRow = await ensureVideoThumbnail({ ...row, views: row.views + 1 });
+  res.json(GetMediaResponse.parse(hydratedRow));
 });
 
 export default router;

@@ -247,10 +247,11 @@ function AppShell({ children }: { children: ReactNode }) {
 function MediaVisual({ media, className = '', eager = false }: { media: Media; className?: string; eager?: boolean }) {
   const src = mediaUrl(media.objectPath);
   return media.type === 'video' ? (
-    <div className={`relative overflow-hidden bg-secondary ${className}`}>
+    <div className={`relative overflow-hidden bg-[#132b35] ${className}`}>
       {media.thumbnailObjectPath ? <img src={mediaUrl(media.thumbnailObjectPath)} alt={`${media.title} video poster`} loading={eager ? 'eager' : 'lazy'} className="h-full w-full object-cover" /> : <video src={src} muted playsInline preload={eager ? 'metadata' : 'none'} className="h-full w-full object-cover" />}
-      <span className="absolute inset-0 flex items-center justify-center bg-foreground/10"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg"><Play size={18} fill="currentColor" /></span></span>
-      <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-foreground/75 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-background"><Play size={11} fill="currentColor" /> Clip</span>
+      <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-foreground/65 via-transparent to-foreground/10" />
+      <span className="absolute inset-0 flex items-center justify-center"><span className="flex h-14 w-14 items-center justify-center rounded-full border border-background/60 bg-background/90 text-foreground shadow-xl transition-transform group-hover:scale-110"><Play size={19} fill="currentColor" /></span></span>
+      <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-foreground/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-background backdrop-blur-md"><Play size={11} fill="currentColor" /> Clip</span>
     </div>
   ) : <img src={src} alt={media.title} loading={eager ? 'eager' : 'lazy'} className={`h-full w-full object-cover ${className}`} />;
 }
