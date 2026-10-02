@@ -1,7 +1,7 @@
 {
   "name": "Picha Pulse",
   "short_name": "Picha Pulse",
-  "description": "What Kenya is seeing now.",
+  "description": "A community media space for discovering and sharing the moments, places, and stories shaping Kenya.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,9 +10,9 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/picha-pulse-icon.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
+      "src": "/favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]

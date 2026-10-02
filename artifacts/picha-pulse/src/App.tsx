@@ -45,6 +45,7 @@ import {
   Sparkles,
   UploadCloud,
   Video,
+  WifiOff,
   X,
   ZoomIn,
   ZoomOut,
@@ -71,6 +72,20 @@ interface BeforeInstallPromptEvent extends Event {
 
 function readSaved(): number[] {
   try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); } catch { return []; }
+}
+
+function useOnlineStatus() {
+  const [online, setOnline] = useState(() => navigator.onLine);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, []);
+  return online;
 }
 
 function formatWhen(date: string) {
@@ -144,14 +159,15 @@ function initials(name?: string | null) {
 function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const online = useOnlineStatus();
   const { data: auth } = useGetCurrentAuthUser();
   const { data: siteVisitors } = useGetSiteVisitorCount();
   const user = auth?.user;
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installDismissed, setInstallDismissed] = useState(false);
   const isActive = (path: string) => location === path;
-  const login = () => { window.location.href = `/api/login?returnTo=${encodeURIComponent(window.location.pathname)}`; };
-  const logout = () => { window.location.href = `/api/logout?returnTo=${encodeURIComponent(window.location.pathname)}`; };
+  const login = () => { if (online) window.location.href = `/api/login?returnTo=${encodeURIComponent(window.location.pathname)}`; };
+  const logout = () => { if (online) window.location.href = `/api/logout?returnTo=${encodeURIComponent(window.location.pathname)}`; };
   useEffect(() => {
     const captureInstallPrompt = (event: Event) => {
       event.preventDefault();
@@ -191,9 +207,9 @@ function AppShell({ children }: { children: ReactNode }) {
               <Plus size={16} strokeWidth={2.5} /> Share a moment
             </Link>
             {user ? (
-              <button onClick={logout} data-testid="button-logout" title="Log out" className="hidden h-10 w-10 items-center justify-center rounded-full border border-border bg-card font-mono-ui text-xs font-bold transition-colors hover:border-primary hover:text-primary sm:flex">{initials(`${user.firstName || ''} ${user.lastName || ''}`)}</button>
+              <button onClick={logout} disabled={!online} data-testid="button-logout" title={online ? 'Log out' : 'Internet required to log out'} className="hidden h-10 w-10 items-center justify-center rounded-full border border-border bg-card font-mono-ui text-xs font-bold transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50 sm:flex">{initials(`${user.firstName || ''} ${user.lastName || ''}`)}</button>
             ) : (
-              <button onClick={login} data-testid="button-login" className="hidden items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-bold transition-colors hover:border-primary hover:text-primary sm:flex"><LogIn size={15} /> Log in</button>
+              <button onClick={login} disabled={!online} data-testid="button-login" title={online ? 'Log in' : 'Internet required to log in'} className="hidden items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-bold transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50 sm:flex"><LogIn size={15} /> Log in</button>
             )}
             <button onClick={() => setMenuOpen(!menuOpen)} data-testid="button-mobile-menu" className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card md:hidden">{menuOpen ? <X size={18} /> : <Menu size={18} />}</button>
           </div>
@@ -205,11 +221,17 @@ function AppShell({ children }: { children: ReactNode }) {
               <Link onClick={() => setMenuOpen(false)} href="/saved" data-testid="link-mobile-saved" className="rounded-lg px-3 py-3 font-semibold hover:bg-muted">Saved moments</Link>
               <Link onClick={() => setMenuOpen(false)} href="/about" data-testid="link-mobile-about" className="rounded-lg px-3 py-3 font-semibold hover:bg-muted">About Picha Pulse</Link>
               <Link onClick={() => setMenuOpen(false)} href="/upload" data-testid="link-mobile-upload" className="mt-2 rounded-lg bg-primary px-3 py-3 font-bold text-primary-foreground">Share a moment</Link>
-              <button onClick={user ? logout : login} data-testid="button-mobile-auth" className="flex items-center gap-2 rounded-lg px-3 py-3 text-left font-semibold hover:bg-muted">{user ? <LogOut size={16} /> : <LogIn size={16} />}{user ? 'Log out' : 'Log in'}</button>
+              <button onClick={user ? logout : login} disabled={!online} data-testid="button-mobile-auth" className="flex items-center gap-2 rounded-lg px-3 py-3 text-left font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">{user ? <LogOut size={16} /> : <LogIn size={16} />}{user ? 'Log out' : 'Log in'}</button>
             </div>
           </div>
         )}
       </header>
+      {!online && (
+        <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 border-b border-amber-500/25 bg-amber-100 px-4 py-2.5 text-center text-xs font-semibold text-amber-950">
+          <WifiOff size={15} className="shrink-0" />
+          <span>Offline mode: cached stories and saved moments remain available. Sign-in and publishing need internet.</span>
+        </div>
+      )}
       {installEvent && !installDismissed && (
         <div className="border-b border-primary/20 bg-primary px-5 py-3 text-primary-foreground">
           <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 sm:px-3">
@@ -382,6 +404,7 @@ function RelatedImages({ mediaId, query }: { mediaId?: number; query: string }) 
 }
 
 function UploadPage() {
+  const online = useOnlineStatus();
   const { data: auth, isLoading: authLoading } = useGetCurrentAuthUser();
   const requestUpload = useRequestUploadUrl();
   const createMedia = useCreateMedia();
@@ -397,6 +420,11 @@ function UploadPage() {
   const login = () => { window.location.href = `/api/login?returnTo=${encodeURIComponent('/upload')}`; };
   const submit = async () => {
     if (!file || !title.trim()) return;
+    if (!navigator.onLine) {
+      setStage('error');
+      setError('Reconnect to the internet before uploading or publishing.');
+      return;
+    }
     setError('');
     try {
       validateUploadFile(file);
@@ -420,6 +448,7 @@ function UploadPage() {
       setStage('done');
     } catch (caught) { setStage('error'); setError(caught instanceof Error ? caught.message : 'Something went wrong. Please try again.'); }
   };
+  if (!online) return <div className="pulse-grid min-h-[calc(100dvh-9rem)] px-5 py-16 sm:py-24"><div className="mx-auto max-w-xl rounded-[1.5rem] border border-border bg-card p-8 text-center shadow-[0_18px_50px_rgba(33,55,71,.08)] sm:p-14"><div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-900"><WifiOff size={28} /></div><span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">Offline mode</span><h1 className="mt-3 font-display text-4xl font-bold tracking-[-.06em]">Publishing needs<br /><span className="text-primary">internet.</span></h1><p className="mx-auto mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">Your files are never sent while offline. Reconnect to sign in and publish securely.</p><Link href="/" data-testid="link-offline-browse" className="mt-8 inline-flex items-center gap-2 rounded-full bg-secondary px-6 py-3 font-bold text-secondary-foreground"><ArrowLeft size={16} /> Back to the feed</Link></div></div>;
   if (authLoading) return <div className="mx-auto max-w-3xl px-5 py-20"><div className="skeleton h-7 w-32 rounded" /><div className="skeleton mt-4 h-16 w-3/4 rounded" /><div className="skeleton mt-10 h-72 rounded-2xl" /></div>;
   if (!auth?.user) return <div className="pulse-grid min-h-[calc(100dvh-9rem)] px-5 py-16 sm:py-24"><div className="mx-auto max-w-xl rounded-[1.5rem] border border-border bg-card p-8 text-center shadow-[0_18px_50px_rgba(33,55,71,.08)] sm:p-14"><div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent"><UploadCloud size={28} /></div><span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">Contributor access</span><h1 className="mt-3 font-display text-4xl font-bold tracking-[-.06em]">Bring the next<br /><span className="text-primary">moment.</span></h1><p className="mx-auto mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">Log in to upload a photo or short clip. Your view of Kenya belongs here.</p><button onClick={login} data-testid="button-upload-login" className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-bold text-primary-foreground transition-transform hover:-translate-y-0.5"><LogIn size={17} /> Log in to share</button></div></div>;
   if (stage === 'done') return <div className="pulse-grid min-h-[calc(100dvh-9rem)] px-5 py-16"><div className="mx-auto max-w-xl rounded-[1.5rem] border border-border bg-card p-8 text-center sm:p-14"><div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-secondary text-accent"><Check size={30} strokeWidth={3} /></div><span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">Published to the pulse</span><h1 className="mt-3 font-display text-4xl font-bold tracking-[-.06em]">That’s a wrap.</h1><p className="mt-4 text-sm leading-relaxed text-muted-foreground">Your moment is now live for people around Kenya to discover.</p><div className="mt-8 flex justify-center gap-3"><Link href="/" data-testid="link-upload-done-feed" className="rounded-full bg-secondary px-5 py-3 text-sm font-bold text-secondary-foreground">See the feed</Link><button onClick={() => { setStage('idle'); setFile(null); setTitle(''); setDescription(''); setLocation(''); setProgress(0); }} data-testid="button-upload-another" className="rounded-full border border-border px-5 py-3 text-sm font-bold hover:border-primary hover:text-primary">Share another</button></div></div></div>;

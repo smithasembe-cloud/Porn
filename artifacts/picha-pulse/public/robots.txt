@@ -1,2 +1,6 @@
 User-agent: *
 Allow: /
+Allow: /media/
+Allow: /picha-pulse-logo.svg
+Allow: /favicon.svg
+Sitemap: https://tukonewsreader.co.ke/sitemap.xml

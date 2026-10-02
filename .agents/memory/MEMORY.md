@@ -1,2 +1,2 @@
-- [Picha Pulse media architecture](picha-pulse-media-architecture.md) — user media bytes live in App Storage while PostgreSQL stores searchable metadata and object paths.
+- [Picha Pulse media architecture](picha-pulse-media-architecture.md) — App Storage holds media; PostgreSQL holds metadata; offline mode caches public reads only.
 - [Native video posters](native-video-posters.md) — Expo video thumbnails are native image refs, so durable upload flows need server-side poster generation as a fallback.
