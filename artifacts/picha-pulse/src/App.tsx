@@ -36,9 +36,10 @@ import {
   LogIn,
   LogOut,
   MapPin,
+  Maximize2,
   Menu,
+  Minimize2,
   MonitorDown,
-  Pause,
   Play,
   Plus,
   Search,
@@ -190,6 +191,7 @@ function AppShell({ children }: { children: ReactNode }) {
   const user = auth?.user;
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installDismissed, setInstallDismissed] = useState(false);
+  const isMediaRoute = location.startsWith('/media/');
   const isActive = (path: string) => location === path;
   const login = () => { if (online) window.location.href = `/api/login?returnTo=${encodeURIComponent(window.location.pathname)}`; };
   const logout = () => { if (online) window.location.href = `/api/logout?returnTo=${encodeURIComponent(window.location.pathname)}`; };
@@ -219,8 +221,8 @@ function AppShell({ children }: { children: ReactNode }) {
     }
   };
   return (
-    <div className="grain min-h-[100dvh] bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-xl">
+    <div className={`${isMediaRoute ? 'media-route-root' : 'grain min-h-[100dvh] bg-background'}`}>
+      {!isMediaRoute && <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-xl">
         <div className="mx-auto flex h-[4.5rem] max-w-[1440px] items-center justify-between px-4 sm:px-8">
           <Link href="/" data-testid="link-brand" className="group flex items-center gap-3">
             <span className="relative flex h-10 w-10 items-center justify-center rounded-[14px] bg-primary text-primary-foreground shadow-[4px_4px_0_hsl(var(--secondary))] transition-transform group-hover:-translate-y-0.5">
@@ -263,14 +265,14 @@ function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
         )}
-      </header>
-      {!online && (
+      </header>}
+      {!isMediaRoute && !online && (
         <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 border-b border-amber-500/25 bg-amber-100 px-4 py-2.5 text-center text-xs font-semibold text-amber-950">
           <WifiOff size={15} className="shrink-0" />
           <span>Offline mode: cached stories and saved moments remain available. Sign-in and publishing need internet.</span>
         </div>
       )}
-      {installEvent && !installDismissed && (
+      {!isMediaRoute && installEvent && !installDismissed && (
         <div className="border-b border-primary/20 bg-primary px-5 py-3 text-primary-foreground">
           <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 sm:px-3">
             <div className="flex min-w-0 items-center gap-3">
@@ -293,13 +295,13 @@ function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
-      <main>{children}</main>
-      <footer className="border-t border-border/80 bg-card">
+      <main className={isMediaRoute ? 'media-route-main' : undefined}>{children}</main>
+      {!isMediaRoute && <footer className="border-t border-border/80 bg-card">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <p><span className="font-display font-bold text-foreground">picha<span className="text-primary">pulse</span></span> · what Kenya is seeing now.</p>
           <div className="flex gap-5"><Link href="/about" data-testid="link-footer-about" className="hover:text-primary">About</Link><Link href="/upload" data-testid="link-footer-upload" className="hover:text-primary">Share media</Link></div>
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }
@@ -440,14 +442,132 @@ function MediaDetailCore() {
   const mediaQuery = useGetMedia(Number(id), { query: { queryKey: getGetMediaQueryKey(Number(id)), enabled: Boolean(id) } });
   const media = mediaQuery.data;
   const [zoom, setZoom] = useState(1);
-  const [playing, setPlaying] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenAvailable, setFullscreenAvailable] = useState(false);
+  const viewerRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [location, setLocation] = useLocation();
-  const share = async () => { if (navigator.share && media) await navigator.share({ title: media.title, text: media.description, url: window.location.href }); else await navigator.clipboard?.writeText(window.location.href); };
-  useEffect(() => { if (videoRef.current && media?.type === 'video') { if (media.thumbnailObjectPath) videoRef.current.poster = mediaUrl(media.thumbnailObjectPath); videoRef.current.play().catch(() => setPlaying(false)); } }, [media]);
-  if (mediaQuery.isLoading) return <div className="flex min-h-[75dvh] items-center justify-center"><LoaderCircle className="animate-spin-soft text-primary" /></div>;
-  if (mediaQuery.isError || !media) return <div className="mx-auto max-w-lg px-5 py-24 text-center"><CircleAlert className="mx-auto mb-4 text-destructive" /><h1 className="font-display text-2xl font-bold">This moment moved on.</h1><p className="mt-2 text-sm text-muted-foreground">We could not load that media.</p><button onClick={() => mediaQuery.refetch()} data-testid="button-retry-media" className="mt-5 rounded-full bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground">Try again</button></div>;
-   return <div className="detail-shell min-h-[calc(100dvh-4.5rem)] bg-secondary text-secondary-foreground"><div className="mx-auto grid min-h-[calc(100dvh-4.5rem)] max-w-[1600px] lg:grid-cols-[1.4fr_.6fr]"><div className="detail-stage relative flex min-h-[55dvh] items-center justify-center overflow-hidden bg-foreground p-4 sm:p-7 lg:min-h-0"><button onClick={() => setLocation('/')} data-testid="button-detail-back" className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-4 py-2.5 text-xs font-bold text-white backdrop-blur-md transition-colors hover:bg-black/55 sm:left-6 sm:top-6"><ArrowLeft size={15} /> Back to pulse</button>{media.type === 'video' ? <div className="relative max-h-full w-full max-w-5xl"><video ref={videoRef} src={mediaUrl(media.objectPath)} controls playsInline className="max-h-[78dvh] w-full rounded-xl object-contain" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} /><button onClick={() => { if (videoRef.current?.paused) videoRef.current.play(); else videoRef.current?.pause(); }} data-testid="button-video-play" aria-label={playing ? 'Pause video' : 'Play video'} className="absolute bottom-14 left-5 flex h-10 w-10 items-center justify-center rounded-full bg-background/85 text-foreground"><span className="sr-only">{playing ? 'Pause video' : 'Play video'}</span>{playing ? <Pause size={17} /> : <Play size={17} fill="currentColor" />}</button></div> : <div className="relative flex h-full max-h-[88dvh] w-full items-center justify-center overflow-auto"><img src={mediaUrl(media.objectPath)} alt={media.title} style={{ transform: `scale(${zoom})` }} className="max-h-full max-w-full object-contain transition-transform duration-300" /><div className="absolute bottom-4 right-4 flex items-center gap-1 rounded-full border border-white/20 bg-black/45 p-1 text-white backdrop-blur-md sm:bottom-6 sm:right-6"><button onClick={() => setZoom(Math.max(1, zoom - .25))} data-testid="button-zoom-out" aria-label="Zoom out" className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-white/15"><ZoomOut size={16} /></button><span className="font-mono-ui px-1 text-[10px]">{Math.round(zoom * 100)}%</span><button onClick={() => setZoom(Math.min(2.5, zoom + .25))} data-testid="button-zoom-in" aria-label="Zoom in" className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-white/15"><ZoomIn size={16} /></button></div></div>}</div><aside className="detail-panel flex flex-col justify-between p-6 sm:p-9 lg:p-12 xl:p-16"><div><div className="mb-8 flex items-center justify-between"><span className="rounded-full bg-accent/15 px-3 py-2 font-mono-ui text-[9px] uppercase tracking-[.2em] text-accent">{media.type === 'image' ? 'A photograph' : 'Community clip'}</span><div className="flex gap-2"><SaveButton media={media} /><button onClick={share} data-testid="button-share-media" aria-label="Share this moment" className="flex h-9 w-9 items-center justify-center rounded-full border border-secondary-foreground/20 transition-colors hover:bg-secondary-foreground/10"><Share2 size={16} /></button></div></div><h1 className="max-w-xl font-display text-[2.6rem] font-semibold leading-[.96] tracking-[-.055em] sm:text-6xl">{media.title}</h1><p className="mt-6 max-w-lg text-sm leading-relaxed text-secondary-foreground/75 sm:text-base">{media.description || 'A moment shared from the community.'}</p><div className="mt-9 flex flex-wrap gap-2"><span className="flex items-center gap-2 rounded-full bg-secondary-foreground/10 px-3 py-2 text-xs"><MapPin size={13} className="text-accent" /> {media.location || 'Kenya'}</span><span className="flex items-center gap-2 rounded-full bg-secondary-foreground/10 px-3 py-2 text-xs"><Clock3 size={13} className="text-accent" /> {formatWhen(media.createdAt)}</span><span className="rounded-full bg-secondary-foreground/10 px-3 py-2 font-mono-ui text-[10px]">{media.views.toLocaleString('en-KE')} views</span></div></div><div className="mt-12 border-t border-secondary-foreground/15 pt-5"><p className="font-mono-ui text-[10px] uppercase tracking-widest text-secondary-foreground/55">Shared by</p><p className="mt-2 font-display text-lg font-bold">{media.uploaderName || 'A neighbour'}</p></div></aside></div></div>;
+  useEffect(() => {
+    const updateFullscreenState = () => setIsFullscreen(document.fullscreenElement === viewerRef.current);
+    setFullscreenAvailable(Boolean(document.fullscreenEnabled && viewerRef.current?.requestFullscreen));
+    document.addEventListener('fullscreenchange', updateFullscreenState);
+    return () => document.removeEventListener('fullscreenchange', updateFullscreenState);
+  }, []);
+
+  const share = async () => {
+    if (!media) return;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: media.title, text: media.description, url: window.location.href });
+      } else {
+        await navigator.clipboard?.writeText(window.location.href);
+      }
+    } catch {
+      // A cancelled share sheet should not interrupt the viewer.
+    }
+  };
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await viewerRef.current?.requestFullscreen?.();
+    } catch {
+      // The full-viewport viewer remains usable when browser fullscreen is unavailable.
+    }
+  };
+
+  const goBack = () => setLocation('/');
+  if (mediaQuery.isLoading) {
+    return (
+      <div className="media-route-state">
+        <button onClick={goBack} data-testid="button-detail-back" aria-label="Back to the feed" className="media-viewer-back"><ArrowLeft size={18} /></button>
+        <LoaderCircle className="animate-spin-soft text-accent" size={30} />
+      </div>
+    );
+  }
+  if (mediaQuery.isError || !media) {
+    return (
+      <div className="media-route-state">
+        <button onClick={goBack} data-testid="button-detail-back" aria-label="Back to the feed" className="media-viewer-back"><ArrowLeft size={18} /></button>
+        <div className="max-w-sm px-6 text-center">
+          <CircleAlert className="mx-auto mb-4 text-accent" size={28} />
+          <h1 className="font-display text-2xl font-bold">This moment moved on.</h1>
+          <p className="mt-2 text-sm text-white/65">We could not load that media.</p>
+          <button onClick={() => mediaQuery.refetch()} data-testid="button-retry-media" className="mt-5 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-foreground">Try again</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <section ref={viewerRef} data-testid="media-fullscreen-viewer" className="media-viewer relative isolate flex min-h-[100svh] w-full flex-col overflow-hidden bg-black text-white">
+      <div className="absolute inset-0 flex items-center justify-center bg-black">
+        {media.type === 'video' ? (
+          <video
+            ref={videoRef}
+            src={mediaUrl(media.objectPath)}
+            poster={media.thumbnailObjectPath ? mediaUrl(media.thumbnailObjectPath) : undefined}
+            controls
+            playsInline
+            preload="metadata"
+            aria-label={media.title}
+            data-testid="video-fullscreen-media"
+            className="h-full w-full object-contain"
+          />
+        ) : (
+          <img
+            src={mediaUrl(media.objectPath)}
+            alt={media.title}
+            draggable={false}
+            style={{ transform: `scale(${zoom})` }}
+            data-testid="image-fullscreen-media"
+            className="h-full w-full select-none object-contain transition-transform duration-300"
+          />
+        )}
+        <div className="media-viewer-shade pointer-events-none absolute inset-0" />
+      </div>
+
+      <div className="relative z-10 flex items-center justify-between gap-3 px-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-7">
+        <button onClick={goBack} data-testid="button-detail-back" aria-label="Back to the feed" title="Back to the feed" className="media-viewer-control">
+          <ArrowLeft size={18} /><span className="hidden sm:inline">Back to pulse</span>
+        </button>
+        <div className="flex items-center gap-2">
+          {media.type === 'image' && (
+            <div className="flex items-center gap-1 rounded-full border border-white/20 bg-black/35 p-1 text-white backdrop-blur-md">
+              <button onClick={() => setZoom(Math.max(1, zoom - 0.25))} data-testid="button-zoom-out" aria-label="Zoom out" className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-white/15"><ZoomOut size={16} /></button>
+              <span className="font-mono-ui px-1 text-[10px]">{Math.round(zoom * 100)}%</span>
+              <button onClick={() => setZoom(Math.min(2.5, zoom + 0.25))} data-testid="button-zoom-in" aria-label="Zoom in" className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-white/15"><ZoomIn size={16} /></button>
+            </div>
+          )}
+          <SaveButton media={media} />
+          <button onClick={share} data-testid="button-share-media" aria-label="Share this moment" title="Share this moment" className="media-viewer-control"><Share2 size={17} /></button>
+          {fullscreenAvailable && (
+            <button onClick={toggleFullscreen} data-testid="button-toggle-fullscreen" aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'} title={isFullscreen ? 'Exit full screen' : 'Enter full screen'} className="media-viewer-control">
+              {isFullscreen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div
+        className={`relative z-10 mt-auto w-full px-5 pt-24 sm:px-9 ${media.type === 'video' ? 'pb-[calc(env(safe-area-inset-bottom)+5.5rem)]' : 'pb-[calc(env(safe-area-inset-bottom)+1.5rem)]'}`}
+      >
+        <div className="max-w-4xl">
+          <span className="inline-flex rounded-full border border-white/20 bg-black/35 px-3 py-1.5 font-mono-ui text-[9px] uppercase tracking-[.18em] text-accent backdrop-blur-md">
+            {media.type === 'image' ? 'A photograph' : 'Community clip'}
+          </span>
+          <h1 className="mt-3 max-w-3xl font-display text-3xl font-semibold leading-[.95] tracking-[-.05em] drop-shadow-md sm:text-5xl">{media.title}</h1>
+          {media.description && <p className="mt-3 line-clamp-3 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">{media.description}</p>}
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-white/80">
+            <span className="flex items-center gap-1.5 rounded-full bg-black/35 px-3 py-2 backdrop-blur-md"><MapPin size={13} className="text-accent" />{media.location || 'Kenya'}</span>
+            <span className="rounded-full bg-black/35 px-3 py-2 backdrop-blur-md">{formatWhen(media.createdAt)}</span>
+            <span className="rounded-full bg-black/35 px-3 py-2 font-mono-ui text-[10px] backdrop-blur-md">{media.views.toLocaleString('en-KE')} views</span>
+            <span className="rounded-full bg-black/35 px-3 py-2 backdrop-blur-md">Shared by {media.uploaderName || 'A neighbour'}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function MediaDetail() {
@@ -467,7 +587,32 @@ function RelatedImages({ mediaId, query }: { mediaId?: number; query: string }) 
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [mediaId, query]);
   if (!items.length) return null;
-  return <section className="bg-background px-5 py-12 text-foreground sm:px-8 sm:py-16"><div className="mx-auto max-w-[1440px]"><div className="mb-6 flex items-end justify-between gap-4"><div><span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">From around the same story</span><h2 className="mt-2 font-display text-3xl font-bold tracking-[-.05em] sm:text-4xl">Related pictures</h2></div><span className="font-mono-ui text-[10px] uppercase tracking-wider text-muted-foreground">Refreshes hourly</span></div><div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{items.map((item) => <a key={item.imageUrl} href={item.sourceUrl} target="_blank" rel="noreferrer" className="group overflow-hidden rounded-2xl border border-border bg-card"><div className="aspect-[4/3] overflow-hidden bg-muted"><img src={item.imageUrl} alt={item.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /></div><div className="p-3"><p className="line-clamp-2 text-xs font-semibold leading-snug">{item.title}</p><p className="mt-2 font-mono-ui text-[9px] uppercase tracking-wider text-muted-foreground">{item.source}</p></div></a>)}</div></div></section>;
+  return (
+    <section className="bg-background px-5 py-12 text-foreground sm:px-8 sm:py-16">
+      <div className="mx-auto max-w-[1440px]">
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">From around the same story</span>
+            <h2 className="mt-2 font-display text-3xl font-bold tracking-[-.05em] sm:text-4xl">Related pictures</h2>
+          </div>
+          <span className="font-mono-ui text-[10px] uppercase tracking-wider text-muted-foreground">Refreshes hourly</span>
+        </div>
+        <div className="related-media-rail">
+          {items.map((item) => (
+            <a key={item.imageUrl} href={item.sourceUrl} target="_blank" rel="noreferrer" data-testid={`related-image-${mediaId}`} className="related-media-card group">
+              <div className="aspect-[4/3] overflow-hidden bg-muted">
+                <img src={item.imageUrl} alt={item.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              </div>
+              <div className="p-3">
+                <p className="line-clamp-2 text-xs font-semibold leading-snug">{item.title}</p>
+                <p className="mt-2 font-mono-ui text-[9px] uppercase tracking-wider text-muted-foreground">{item.source}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function UploadPage() {
