@@ -14,3 +14,9 @@ The web app's offline mode caches the app shell, public media feed/detail respon
 **Why:** Offline browsing is useful on unreliable connections, but cached identity data and deferred writes create privacy and duplicate-publish risks.
 
 **How to apply:** Keep service-worker caches limited to public GET reads and downloaded image assets. If adding offline writes or user-specific cached data, design explicit synchronization and account-scoped clearing rather than expanding the cache allowlist.
+
+The near-term install target is a simple, installable web PWA; full native Android APK configuration is a later step chosen by the user.
+
+**Why:** The user wants easy PWA installation now and plans to configure the full APK later.
+
+**How to apply:** Prioritize PWA install and offline usability for current upgrades. Keep the Expo companion maintainable, but do not make full APK packaging a current release blocker.

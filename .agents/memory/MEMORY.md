@@ -1,2 +1,2 @@
-- [Picha Pulse media architecture](picha-pulse-media-architecture.md) — App Storage holds media; PostgreSQL holds metadata; offline mode caches public reads only.
+- [Picha Pulse media architecture](picha-pulse-media-architecture.md) — PWA is the near-term install target; keep media in App Storage, metadata in PostgreSQL, and offline caches public reads only.
 - [Native video posters](native-video-posters.md) — Expo video thumbnails are native image refs, so durable upload flows need server-side poster generation as a fallback.
