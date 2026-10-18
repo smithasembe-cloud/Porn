@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { AdultAccessGate } from '@/components/adult-access-gate';
@@ -28,7 +28,6 @@ import {
   Clock3,
   Download,
   Eye,
-  ExternalLink,
   FileImage,
   FileVideo,
   Image as ImageIcon,
@@ -72,6 +71,65 @@ const VISITOR_SESSION_KEY = 'picha-pulse-visitor-session';
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+interface PwaInstallContextValue {
+  canInstall: boolean;
+  installed: boolean;
+  install: () => Promise<boolean>;
+}
+
+const PwaInstallContext = createContext<PwaInstallContextValue | null>(null);
+
+function PwaInstallProvider({ children }: { children: ReactNode }) {
+  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installed, setInstalled] = useState(() => {
+    const safariNavigator = navigator as Navigator & { standalone?: boolean };
+    return window.matchMedia('(display-mode: standalone)').matches || safariNavigator.standalone === true;
+  });
+
+  useEffect(() => {
+    const captureInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallEvent(event as BeforeInstallPromptEvent);
+    };
+    const handleInstalled = () => {
+      setInstallEvent(null);
+      setInstalled(true);
+    };
+    window.addEventListener('beforeinstallprompt', captureInstallPrompt);
+    window.addEventListener('appinstalled', handleInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', captureInstallPrompt);
+      window.removeEventListener('appinstalled', handleInstalled);
+    };
+  }, []);
+
+  const install = async () => {
+    if (!installEvent) return false;
+    try {
+      await installEvent.prompt();
+      const choice = await installEvent.userChoice;
+      if (choice.outcome === 'accepted') setInstalled(true);
+      return choice.outcome === 'accepted';
+    } catch {
+      return false;
+    } finally {
+      setInstallEvent(null);
+    }
+  };
+
+  return (
+    <PwaInstallContext.Provider value={{ canInstall: Boolean(installEvent) && !installed, installed, install }}>
+      {children}
+    </PwaInstallContext.Provider>
+  );
+}
+
+function usePwaInstall() {
+  const context = useContext(PwaInstallContext);
+  if (!context) throw new Error('PWA install controls must be used inside PwaInstallProvider.');
+  return context;
 }
 
 function readSaved(): number[] {
@@ -164,6 +222,59 @@ function validateUploadFile(file: File) {
   const maxBytes = 100 * 1024 * 1024;
   if (!['image/', 'video/'].some((prefix) => file.type.startsWith(prefix))) throw new Error('Choose a JPG, PNG, WEBP, GIF, MP4, or other supported image/video file.');
   if (file.size <= 0 || file.size > maxBytes) throw new Error('That file is too large. Please choose a file under 100 MB.');
+}
+
+async function optimizeImageForUpload(file: File): Promise<File> {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size < 1.5 * 1024 * 1024 || file.size > 32 * 1024 * 1024) {
+    return file;
+  }
+
+  let bitmap: ImageBitmap | undefined;
+  try {
+    bitmap = await createImageBitmap(file);
+    const maxDimension = 2560;
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) return file;
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.84));
+    if (!blob || blob.type !== 'image/webp' || blob.size >= file.size) return file;
+    const baseName = file.name.replace(/\.[^/.]+$/, '') || 'picha-pulse-photo';
+    return new File([blob], `${baseName}.webp`, { type: 'image/webp', lastModified: file.lastModified });
+  } catch {
+    return file;
+  } finally {
+    bitmap?.close();
+  }
+}
+
+function uploadFileWithProgress(
+  uploadUrl: string,
+  file: File,
+  onProgress: (loaded: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open('PUT', uploadUrl);
+    request.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+    request.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) onProgress(event.loaded);
+    });
+    request.addEventListener('load', () => {
+      if (request.status >= 200 && request.status < 300) {
+        onProgress(file.size);
+        resolve();
+      } else {
+        reject(new Error(`Upload did not complete (${request.status}). Please try again.`));
+      }
+    });
+    request.addEventListener('error', () => reject(new Error('Network error while uploading. Check your connection and try again.')));
+    request.addEventListener('abort', () => reject(new Error('Upload was interrupted. Please try again.')));
+    request.send(file);
+  });
 }
 
 function VisitorSession() {
