@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -42,31 +42,31 @@
 }
 
 :root {
-  --background: 41 44% 94%;
-  --foreground: 211 39% 17%;
-  --border: 38 25% 82%;
-  --input: 38 25% 82%;
-  --ring: 13 73% 53%;
-  --card: 42 52% 97%;
-  --card-foreground: 211 39% 17%;
-  --card-border: 38 25% 84%;
-  --popover: 42 52% 97%;
-  --popover-foreground: 211 39% 17%;
-  --popover-border: 38 25% 84%;
-  --primary: 13 73% 53%;
-  --primary-foreground: 42 52% 97%;
-  --secondary: 179 43% 28%;
-  --secondary-foreground: 42 52% 97%;
-  --muted: 39 26% 88%;
-  --muted-foreground: 211 18% 45%;
-  --accent: 46 96% 59%;
-  --accent-foreground: 211 39% 17%;
+  --background: 39 40% 93%;
+  --foreground: 188 33% 14%;
+  --border: 34 21% 81%;
+  --input: 34 21% 81%;
+  --ring: 14 68% 47%;
+  --card: 40 48% 97%;
+  --card-foreground: 188 33% 14%;
+  --card-border: 34 21% 82%;
+  --popover: 40 48% 97%;
+  --popover-foreground: 188 33% 14%;
+  --popover-border: 34 21% 82%;
+  --primary: 14 68% 47%;
+  --primary-foreground: 40 48% 97%;
+  --secondary: 184 44% 23%;
+  --secondary-foreground: 40 48% 97%;
+  --muted: 38 24% 87%;
+  --muted-foreground: 188 14% 42%;
+  --accent: 43 91% 57%;
+  --accent-foreground: 188 33% 14%;
   --destructive: 2 63% 45%;
-  --destructive-foreground: 42 52% 97%;
-  --app-font-sans: 'Manrope', sans-serif;
+  --destructive-foreground: 40 48% 97%;
+  --app-font-sans: 'DM Sans', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: 'DM Mono', monospace;
-  --radius: 0.9rem;
+  --radius: 1.05rem;
   --primary-border: hsl(var(--primary));
   --secondary-border: hsl(var(--secondary));
   --muted-border: hsl(var(--muted));
@@ -75,24 +75,24 @@
 }
 
 .dark {
-  --background: 211 39% 12%;
-  --foreground: 42 52% 97%;
-  --border: 211 25% 25%;
-  --input: 211 25% 25%;
-  --card: 211 32% 16%;
-  --card-foreground: 42 52% 97%;
-  --card-border: 211 25% 25%;
-  --popover: 211 32% 16%;
-  --popover-foreground: 42 52% 97%;
-  --popover-border: 211 25% 25%;
-  --primary: 13 73% 58%;
-  --primary-foreground: 42 52% 97%;
-  --secondary: 179 43% 36%;
-  --secondary-foreground: 42 52% 97%;
-  --muted: 211 26% 22%;
+  --background: 188 30% 11%;
+  --foreground: 39 40% 93%;
+  --border: 187 22% 25%;
+  --input: 187 22% 25%;
+  --card: 188 26% 15%;
+  --card-foreground: 39 40% 93%;
+  --card-border: 187 22% 25%;
+  --popover: 188 26% 15%;
+  --popover-foreground: 39 40% 93%;
+  --popover-border: 187 22% 25%;
+  --primary: 14 68% 55%;
+  --primary-foreground: 40 48% 97%;
+  --secondary: 184 42% 31%;
+  --secondary-foreground: 39 40% 93%;
+  --muted: 188 23% 21%;
   --muted-foreground: 39 18% 70%;
-  --accent: 46 96% 59%;
-  --accent-foreground: 211 39% 17%;
+  --accent: 43 91% 57%;
+  --accent-foreground: 188 33% 14%;
   --destructive: 2 63% 55%;
   --destructive-foreground: 42 52% 97%;
 }
@@ -108,12 +108,9 @@
 }
 
 @layer utilities {
-  .font-display { font-family: 'Space Grotesk', sans-serif; }
+  .font-display { font-family: 'Fraunces', Georgia, serif; }
   .font-mono-ui { font-family: 'DM Mono', monospace; }
-  .pulse-grid {
-    background-image: linear-gradient(rgba(33, 55, 71, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(33, 55, 71, 0.055) 1px, transparent 1px);
-    background-size: 28px 28px;
-  }
+  .pulse-grid { background-image: radial-gradient(hsl(var(--foreground) / .07) .7px, transparent .7px); background-size: 17px 17px; }
   .grain::after {
     content: '';
     position: fixed;
@@ -131,7 +128,35 @@
 }
 
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes spin { to { transform: rotate(360deg); } }
-.animate-rise { animation: rise .55s cubic-bezier(.2,.8,.2,1) both; }
+.animate-rise { animation: rise .65s cubic-bezier(.2,.8,.2,1) both; }
 .animate-spin-soft { animation: spin .85s linear infinite; }
+
+::selection { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
+button, a, input, textarea { transition-timing-function: cubic-bezier(.2,.8,.2,1); }
+:focus-visible { outline: 3px solid hsl(var(--accent)); outline-offset: 3px; }
+.grain { isolation: isolate; }
+.grain::after { z-index: 80; }
+.photo-card { box-shadow: 0 4px 18px hsl(var(--foreground) / .055); }
+.photo-card:hover { box-shadow: 0 22px 44px hsl(var(--foreground) / .14); }
+.hero-panel { background: linear-gradient(135deg, hsl(var(--secondary)), hsl(187 45% 17%)); }
+.hero-orbit { animation: orbit 24s linear infinite; }
+.detail-shell { background: hsl(185 42% 20%); }
+.detail-stage { background-color: hsl(188 32% 10%); background-image: radial-gradient(hsl(43 91% 57% / .12) .75px, transparent .75px); background-size: 20px 20px; }
+.detail-panel { background: linear-gradient(155deg, hsl(184 44% 23%), hsl(187 43% 18%)); }
+.detail-stage img { will-change: transform; }
+.detail-shell button:not(:disabled):active { transform: scale(.97); }
+.pulse-grid input, .pulse-grid textarea { transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease; }
+.pulse-grid input:focus, .pulse-grid textarea:focus { box-shadow: 0 0 0 3px hsl(var(--primary) / .12); }
+.photo-card img, .photo-card video { display: block; }
+.photo-card a:focus-visible { outline-offset: -4px; }
+button:disabled { cursor: not-allowed; }
+@media (max-width: 639px) {
+  .detail-shell { min-height: calc(100dvh - 4.5rem); }
+  .detail-stage { min-height: 48dvh; }
+}
+@keyframes orbit { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

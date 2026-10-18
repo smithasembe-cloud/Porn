@@ -6,10 +6,8 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import './index.css';
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
-      // Browsing continues online when a browser blocks offline support.
-    });
+  navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
+    // Browsing continues online when a browser blocks offline support.
   });
 }
 

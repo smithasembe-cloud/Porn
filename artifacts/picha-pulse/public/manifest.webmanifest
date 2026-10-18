@@ -2,18 +2,45 @@
   "name": "Picha Pulse",
   "short_name": "Picha Pulse",
   "description": "A community media space for discovering and sharing the moments, places, and stories shaping Kenya.",
-  "start_url": "/",
-  "scope": "/",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#f5f1e8",
   "theme_color": "#e65d42",
   "orientation": "portrait-primary",
+  "categories": ["social", "photo", "lifestyle"],
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "64x64",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "./icons/picha-pulse-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/picha-pulse-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/picha-pulse-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Explore the feed",
+      "url": "./",
+      "icons": [{ "src": "./icons/picha-pulse-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Saved moments",
+      "url": "./saved",
+      "icons": [{ "src": "./icons/picha-pulse-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }
