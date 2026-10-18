@@ -1,2 +1,3 @@
 - [Picha Pulse media architecture](picha-pulse-media-architecture.md) — PWA is the near-term install target; keep media in App Storage, metadata in PostgreSQL, and offline caches public reads only.
 - [Native video posters](native-video-posters.md) — Expo video thumbnails are native image refs, so durable upload flows need server-side poster generation as a fallback.
+- [Picha Pulse audience](picha-pulse-audience.md) — the user says the service is for adults; keep its 18+ requirement in product decisions.

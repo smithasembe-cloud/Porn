@@ -154,6 +154,22 @@ button, a, input, textarea { transition-timing-function: cubic-bezier(.2,.8,.2,1
 .media-viewer-back { position: absolute; left: 1rem; top: calc(env(safe-area-inset-top) + 1rem); z-index: 5; }
 .related-media-rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .85rem; }
 .related-media-card { min-width: 0; overflow: hidden; border: 1px solid hsl(var(--border)); border-radius: 1rem; background: hsl(var(--card)); scroll-snap-align: start; }
+.adult-gate { display: grid; min-height: 100dvh; place-items: center; overflow: hidden; padding: clamp(1.25rem, 5vw, 3rem); background: radial-gradient(circle at 82% 16%, hsl(var(--accent) / .2), transparent 31rem), linear-gradient(145deg, hsl(var(--secondary)), hsl(188 34% 10%)); color: hsl(var(--secondary-foreground)); }
+.adult-gate-card { width: min(100%, 34rem); border: 1px solid hsl(var(--secondary-foreground) / .18); border-radius: 1.75rem; background: hsl(var(--card) / .97); padding: clamp(1.5rem, 6vw, 3rem); color: hsl(var(--foreground)); box-shadow: 0 32px 90px hsl(188 40% 5% / .42); }
+.adult-gate-mark { display: grid; width: 4.5rem; height: 4.5rem; place-items: center; border-radius: 1.25rem; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-family: var(--app-font-mono); font-size: 1.1rem; font-weight: 800; box-shadow: 5px 5px 0 hsl(var(--secondary)); }
+.adult-gate-eyebrow { margin-top: 2rem; color: hsl(var(--primary)); font-family: var(--app-font-mono); font-size: .65rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+.adult-gate-title { margin-top: .75rem; font-family: var(--app-font-serif); font-size: clamp(2.25rem, 8vw, 3.75rem); font-weight: 700; letter-spacing: -.065em; line-height: .98; }
+.adult-gate-notice { display: flex; align-items: flex-start; gap: .8rem; margin-top: 1.5rem; border: 1px solid hsl(var(--primary) / .22); border-radius: 1rem; background: hsl(var(--primary) / .07); padding: 1rem; color: hsl(var(--foreground)); }
+.adult-gate-notice svg { flex: none; margin-top: .05rem; color: hsl(var(--primary)); }
+.adult-gate-notice p, .adult-gate-copy { font-size: .9rem; line-height: 1.65; }
+.adult-gate-copy { margin-top: 1rem; color: hsl(var(--muted-foreground)); }
+.adult-gate-actions { display: grid; gap: .75rem; margin-top: 1.75rem; }
+.adult-gate-primary, .adult-gate-secondary { display: inline-flex; min-height: 3.25rem; align-items: center; justify-content: center; border-radius: 999px; padding: .8rem 1.25rem; font-size: .88rem; font-weight: 700; transition: transform .2s ease, background-color .2s ease, border-color .2s ease; }
+.adult-gate-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.adult-gate-primary:hover { transform: translateY(-2px); background: hsl(var(--primary) / .9); }
+.adult-gate-secondary { border: 1px solid hsl(var(--border)); background: transparent; color: hsl(var(--muted-foreground)); }
+.adult-gate-secondary:hover { border-color: hsl(var(--foreground) / .4); color: hsl(var(--foreground)); }
+.adult-gate-disclaimer { margin-top: 1.25rem; color: hsl(var(--muted-foreground)); font-size: .72rem; line-height: 1.55; text-align: center; }
 .pulse-grid input, .pulse-grid textarea { transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease; }
 .pulse-grid input:focus, .pulse-grid textarea:focus { box-shadow: 0 0 0 3px hsl(var(--primary) / .12); }
 .photo-card img, .photo-card video { display: block; }
