@@ -301,37 +301,12 @@ function AppShell({ children }: { children: ReactNode }) {
   const { data: auth } = useGetCurrentAuthUser();
   const { data: siteVisitors } = useGetSiteVisitorCount();
   const user = auth?.user;
-  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const { canInstall, installed, install } = usePwaInstall();
   const [installDismissed, setInstallDismissed] = useState(false);
   const isMediaRoute = location.startsWith('/media/');
   const isActive = (path: string) => location === path;
   const login = () => { if (online) window.location.href = `/api/login?returnTo=${encodeURIComponent(window.location.pathname)}`; };
   const logout = () => { if (online) window.location.href = `/api/logout?returnTo=${encodeURIComponent(window.location.pathname)}`; };
-  useEffect(() => {
-    const captureInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      setInstallEvent(event as BeforeInstallPromptEvent);
-    };
-    const installed = () => {
-      setInstallEvent(null);
-      setInstallDismissed(true);
-    };
-    window.addEventListener('beforeinstallprompt', captureInstallPrompt);
-    window.addEventListener('appinstalled', installed);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', captureInstallPrompt);
-      window.removeEventListener('appinstalled', installed);
-    };
-  }, []);
-  const install = async () => {
-    if (!installEvent) return;
-    try {
-      await installEvent.prompt();
-      await installEvent.userChoice;
-    } finally {
-      setInstallEvent(null);
-    }
-  };
   return (
     <div className={`${isMediaRoute ? 'media-route-root' : 'grain min-h-[100dvh] bg-background'}`}>
       {!isMediaRoute && <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-xl">
@@ -347,7 +322,11 @@ function AppShell({ children }: { children: ReactNode }) {
             <Link href="/" data-testid="link-nav-feed" className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${isActive('/') ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>The feed</Link>
             <Link href="/saved" data-testid="link-nav-saved" className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${isActive('/saved') ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>Saved</Link>
             <Link href="/about" data-testid="link-nav-about" className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${isActive('/about') ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>About</Link>
-            <Link href="/about#install" data-testid="link-nav-install" className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-primary transition-colors hover:bg-primary/10"><MonitorDown size={15} /> Install</Link>
+            {canInstall ? (
+              <button onClick={() => void install()} data-testid="button-nav-install" className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-primary transition-colors hover:bg-primary/10"><MonitorDown size={15} /> Install</button>
+            ) : (
+              <Link href="/about#install" data-testid="link-nav-install" className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-primary transition-colors hover:bg-primary/10"><MonitorDown size={15} /> {installed ? 'Installed' : 'Install'}</Link>
+            )}
           </nav>
           <div className="flex items-center gap-2">
             <span className="hidden items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 font-mono-ui text-[10px] text-muted-foreground sm:flex" title="Picha Pulse visitors">
@@ -371,7 +350,11 @@ function AppShell({ children }: { children: ReactNode }) {
               <Link onClick={() => setMenuOpen(false)} href="/" data-testid="link-mobile-feed" className="rounded-lg px-3 py-3 font-semibold hover:bg-muted">The feed</Link>
               <Link onClick={() => setMenuOpen(false)} href="/saved" data-testid="link-mobile-saved" className="rounded-lg px-3 py-3 font-semibold hover:bg-muted">Saved moments</Link>
               <Link onClick={() => setMenuOpen(false)} href="/about" data-testid="link-mobile-about" className="rounded-lg px-3 py-3 font-semibold hover:bg-muted">About Picha Pulse</Link>
-              <Link onClick={() => setMenuOpen(false)} href="/about#install" data-testid="link-mobile-install" className="rounded-lg px-3 py-3 font-semibold text-primary hover:bg-primary/10">Install Picha Pulse</Link>
+              {canInstall ? (
+                <button onClick={() => { setMenuOpen(false); void install(); }} data-testid="button-mobile-install" className="rounded-lg px-3 py-3 text-left font-semibold text-primary hover:bg-primary/10">Install Picha Pulse</button>
+              ) : (
+                <Link onClick={() => setMenuOpen(false)} href="/about#install" data-testid="link-mobile-install" className="rounded-lg px-3 py-3 font-semibold text-primary hover:bg-primary/10">{installed ? 'Picha Pulse installed' : 'Install Picha Pulse'}</Link>
+              )}
               <Link onClick={() => setMenuOpen(false)} href="/upload" data-testid="link-mobile-upload" className="mt-2 rounded-lg bg-primary px-3 py-3 font-bold text-primary-foreground">Share a moment</Link>
               <button onClick={user ? logout : login} disabled={!online} data-testid="button-mobile-auth" className="flex items-center gap-2 rounded-lg px-3 py-3 text-left font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">{user ? <LogOut size={16} /> : <LogIn size={16} />}{user ? 'Log out' : 'Log in'}</button>
             </div>
@@ -384,7 +367,7 @@ function AppShell({ children }: { children: ReactNode }) {
           <span>Offline mode: cached stories and saved moments remain available. Sign-in and publishing need internet.</span>
         </div>
       )}
-      {!isMediaRoute && installEvent && !installDismissed && (
+      {!isMediaRoute && canInstall && !installDismissed && (
         <div className="border-b border-primary/20 bg-primary px-5 py-3 text-primary-foreground">
           <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 sm:px-3">
             <div className="flex min-w-0 items-center gap-3">
@@ -737,10 +720,21 @@ function UploadPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [stage, setStage] = useState<'idle' | 'thumbnailing' | 'requesting' | 'uploading' | 'publishing' | 'done' | 'error'>('idle');
+  const [stage, setStage] = useState<'idle' | 'optimizing' | 'requesting' | 'uploading' | 'publishing' | 'done' | 'error'>('idle');
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
+  const [uploadNotice, setUploadNotice] = useState('');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!file?.type.startsWith('image/')) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
   const login = () => { window.location.href = `/api/login?returnTo=${encodeURIComponent('/upload')}`; };
   const submit = async () => {
     if (!file || !title.trim()) return;
@@ -750,24 +744,69 @@ function UploadPage() {
       return;
     }
     setError('');
+    setUploadNotice('');
     try {
       validateUploadFile(file);
-      let thumbnailObjectPath: string | undefined;
-      if (file.type.startsWith('video/')) {
-        setStage('thumbnailing');
-        const poster = await createVideoPoster(file);
-        const posterResponse = await requestUpload.mutateAsync({ data: { name: poster.name, size: poster.size, contentType: poster.type } });
-        const posterUpload = await fetch(posterResponse.uploadURL, { method: 'PUT', headers: { 'Content-Type': poster.type }, body: poster });
-        if (!posterUpload.ok) throw new Error('Video preview upload did not complete');
-        thumbnailObjectPath = posterResponse.objectPath;
+      let mediaFile = file;
+      if (file.type.startsWith('image/')) {
+        setStage('optimizing');
+        mediaFile = await optimizeImageForUpload(file);
       }
       setStage('requesting');
-      const response = await requestUpload.mutateAsync({ data: { name: file.name, size: file.size, contentType: file.type } });
+      const isVideo = mediaFile.type.startsWith('video/');
+      const posterPromise = isVideo
+        ? createVideoPoster(mediaFile).catch(() => null)
+        : Promise.resolve(null);
+      const [mediaUploadInfo, poster] = await Promise.all([
+        requestUpload.mutateAsync({
+          data: { name: mediaFile.name, size: mediaFile.size, contentType: mediaFile.type },
+        }),
+        posterPromise,
+      ]);
+      let posterUploadInfo: typeof mediaUploadInfo | null = null;
+      let thumbnailObjectPath: string | undefined;
+      if (poster) {
+        try {
+          posterUploadInfo = await requestUpload.mutateAsync({
+            data: { name: poster.name, size: poster.size, contentType: poster.type },
+          });
+        } catch {
+          setUploadNotice('The clip will upload now; its preview will be generated after upload.');
+        }
+      } else if (isVideo) {
+        setUploadNotice('The clip will upload now; its preview will be generated after upload.');
+      }
+
+      const uploads = [
+        { key: 'media', uploadURL: mediaUploadInfo.uploadURL, file: mediaFile },
+        ...(poster && posterUploadInfo
+          ? [{ key: 'poster', uploadURL: posterUploadInfo.uploadURL, file: poster }]
+          : []),
+      ];
+      const totalBytes = uploads.reduce((total, upload) => total + upload.file.size, 0);
+      const uploadedBytes = new Map(uploads.map((upload) => [upload.key, 0]));
+      const reportProgress = (key: string, loaded: number) => {
+        uploadedBytes.set(key, loaded);
+        const totalUploaded = [...uploadedBytes.values()].reduce((total, value) => total + value, 0);
+        setProgress(totalBytes > 0 ? Math.min(100, Math.round((totalUploaded / totalBytes) * 100)) : 0);
+      };
       setStage('uploading');
-      const upload = await fetch(response.uploadURL, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
-      if (!upload.ok) throw new Error('Upload did not complete');
-      setProgress(100); setStage('publishing');
-      await createMedia.mutateAsync({ data: { title: title.trim(), description: description.trim(), location: location.trim(), type: file.type.startsWith('video/') ? 'video' : 'image', mimeType: file.type, objectPath: response.objectPath, thumbnailObjectPath, uploaderName: `${auth?.user?.firstName || ''} ${auth?.user?.lastName || ''}`.trim() || undefined } });
+      const uploadResults = await Promise.allSettled(
+        uploads.map((upload) => uploadFileWithProgress(
+          upload.uploadURL,
+          upload.file,
+          (loaded) => reportProgress(upload.key, loaded),
+        )),
+      );
+      if (uploadResults[0]?.status === 'rejected') throw uploadResults[0].reason;
+      if (posterUploadInfo && uploadResults[1]?.status === 'fulfilled') {
+        thumbnailObjectPath = posterUploadInfo.objectPath;
+      } else if (posterUploadInfo && uploadResults[1]?.status === 'rejected') {
+        setUploadNotice('The clip uploaded; its preview will be generated after upload.');
+      }
+      setProgress(100);
+      setStage('publishing');
+      await createMedia.mutateAsync({ data: { title: title.trim(), description: description.trim(), location: location.trim(), type: mediaFile.type.startsWith('video/') ? 'video' : 'image', mimeType: mediaFile.type, objectPath: mediaUploadInfo.objectPath, thumbnailObjectPath, uploaderName: `${auth?.user?.firstName || ''} ${auth?.user?.lastName || ''}`.trim() || undefined } });
       await queryClient.invalidateQueries({ queryKey: getListMediaQueryKey() });
       setStage('done');
     } catch (caught) { setStage('error'); setError(caught instanceof Error ? caught.message : 'Something went wrong. Please try again.'); }
@@ -803,20 +842,67 @@ function SavedPage() {
 }
 
 function AboutPage() {
-  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showGuide, setShowGuide] = useState(false);
-  useEffect(() => {
-    const capture = (event: Event) => { event.preventDefault(); setInstallEvent(event as BeforeInstallPromptEvent); };
-    const installed = () => setInstallEvent(null);
-    window.addEventListener('beforeinstallprompt', capture);
-    window.addEventListener('appinstalled', installed);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', capture);
-      window.removeEventListener('appinstalled', installed);
-    };
-  }, []);
-  const install = async () => { if (installEvent) { await installEvent.prompt(); setInstallEvent(null); } else setShowGuide(true); };
-  return <div className="pulse-grid"><section className="mx-auto max-w-[1440px] px-5 pb-16 pt-14 sm:px-8 sm:pt-24"><div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr]"><div><span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">About the pulse</span><h1 className="mt-4 max-w-3xl font-display text-6xl font-bold leading-[.86] tracking-[-.08em] sm:text-8xl">Kenya,<br /><span className="text-primary">in frame.</span></h1><p className="mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground">Picha Pulse is a daily window into what people across Kenya are seeing, making, trading, and talking about right now.</p></div><div className="flex min-h-[280px] flex-col justify-between rounded-[1.5rem] bg-primary p-7 text-primary-foreground"><div className="flex justify-between"><span className="font-display text-xl font-bold tracking-[-.05em]">picha<span className="text-accent">pulse</span></span><ArrowUpRight size={23} /></div><p className="max-w-xs font-display text-3xl font-bold leading-tight">The people closest to the moment tell it best.</p><span className="font-mono-ui text-[10px] uppercase tracking-[.18em] text-primary-foreground/65">Built for the everyday extraordinary</span></div></div></section><section className="border-y border-border bg-card"><div className="mx-auto grid max-w-[1440px] gap-0 px-5 sm:grid-cols-3 sm:px-8">{[['01', 'Look around', 'Browse trade photography and short community clips from all over the country.'], ['02', 'Keep what matters', 'Save the moments you want to find again. No account needed for your personal pocket.'], ['03', 'Put it on the map', 'Log in, upload a photo or clip, and give your corner of Kenya a little context.']].map(([number, title, body]) => <div key={number} className="border-b border-border py-8 sm:border-b-0 sm:border-r sm:px-8 sm:py-12 sm:first:pl-0 sm:last:border-r-0"><span className="font-mono-ui text-xs text-primary">{number}</span><h2 className="mt-8 font-display text-2xl font-bold tracking-[-.04em]">{title}</h2><p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p></div>)}</div></section><section id="install" className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 sm:py-24"><div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr]"><div><span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">Carry it with you</span><h2 className="mt-3 font-display text-4xl font-bold tracking-[-.06em] sm:text-6xl">A better<br />daily check-in.</h2></div><div className="rounded-[1.5rem] border border-border bg-card p-7 sm:p-10"><div className="flex items-start gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent"><MonitorDown size={23} /></div><div><h3 className="font-display text-2xl font-bold tracking-[-.04em]">Add Picha Pulse to your home screen</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">Open the feed like an app, without hunting for a tab. It is quick, lightweight, and made for the daily scroll. Your browser will ask before installing.</p><button onClick={install} data-testid="button-install-app" className="mt-6 inline-flex items-center gap-2 rounded-full bg-secondary px-5 py-3 text-sm font-bold text-secondary-foreground transition-transform hover:-translate-y-0.5">{installEvent ? <Download size={16} /> : <ExternalLink size={16} />} {installEvent ? 'Install Picha Pulse' : 'Show install steps'}</button></div></div>{showGuide && <div className="mt-4 rounded-xl bg-muted p-5 text-sm leading-relaxed"><p className="font-bold">iPhone or iPad</p><p className="mt-1 text-muted-foreground">Open this page in Safari, tap Share, then choose “Add to Home Screen”.</p><p className="mt-4 font-bold">Android (Chrome)</p><p className="mt-1 text-muted-foreground">Tap “Install Picha Pulse” above when offered, or open the browser menu and choose “Install app” or “Add to Home screen”.</p><p className="mt-4 font-bold">Desktop (Chrome or Edge)</p><p className="mt-1 text-muted-foreground">Use the install icon in the address bar or select “Install Picha Pulse” from the browser menu.</p></div>}</div></div></section></div>;
+  const { canInstall, installed, install } = usePwaInstall();
+  return (
+    <div className="pulse-grid">
+      <section className="mx-auto max-w-[1440px] px-5 pb-16 pt-14 sm:px-8 sm:pt-24">
+        <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr]">
+          <div>
+            <span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">About the pulse</span>
+            <h1 className="mt-4 max-w-3xl font-display text-6xl font-bold leading-[.86] tracking-[-.08em] sm:text-8xl">Kenya,<br /><span className="text-primary">in frame.</span></h1>
+            <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground">Picha Pulse is a daily window into what people across Kenya are seeing, making, trading, and talking about right now.</p>
+          </div>
+          <div className="flex min-h-[280px] flex-col justify-between rounded-[1.5rem] bg-primary p-7 text-primary-foreground">
+            <div className="flex justify-between"><span className="font-display text-xl font-bold tracking-[-.05em]">picha<span className="text-accent">pulse</span></span><ArrowUpRight size={23} /></div>
+            <p className="max-w-xs font-display text-3xl font-bold leading-tight">The people closest to the moment tell it best.</p>
+            <span className="font-mono-ui text-[10px] uppercase tracking-[.18em] text-primary-foreground/65">Built for the everyday extraordinary</span>
+          </div>
+        </div>
+      </section>
+      <section className="border-y border-border bg-card">
+        <div className="mx-auto grid max-w-[1440px] gap-0 px-5 sm:grid-cols-3 sm:px-8">
+          {[
+            ['01', 'Look around', 'Browse trade photography and short community clips from all over the country.'],
+            ['02', 'Keep what matters', 'Save the moments you want to find again. No account needed for your personal pocket.'],
+            ['03', 'Put it on the map', 'Log in, upload a photo or clip, and give your corner of Kenya a little context.'],
+          ].map(([number, title, body]) => (
+            <div key={number} className="border-b border-border py-8 sm:border-b-0 sm:border-r sm:px-8 sm:py-12 sm:first:pl-0 sm:last:border-r-0">
+              <span className="font-mono-ui text-xs text-primary">{number}</span>
+              <h2 className="mt-8 font-display text-2xl font-bold tracking-[-.04em]">{title}</h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section id="install" className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 sm:py-24">
+        <div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr]">
+          <div>
+            <span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">Carry it with you</span>
+            <h2 className="mt-3 font-display text-4xl font-bold tracking-[-.06em] sm:text-6xl">A better<br />daily check-in.</h2>
+          </div>
+          <div className="rounded-[1.5rem] border border-border bg-card p-7 sm:p-10">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent"><MonitorDown size={23} /></div>
+              <div>
+                <h3 className="font-display text-2xl font-bold tracking-[-.04em]">Install Picha Pulse</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">On supported browsers, tap once to open the browser’s install prompt. A PWA installs through your browser; it is not an APK download.</p>
+                <button
+                  onClick={() => void install()}
+                  disabled={!canInstall || installed}
+                  data-testid="button-install-app"
+                  className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-secondary px-5 py-3 text-sm font-bold text-secondary-foreground transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  <Download size={16} />
+                  {installed ? 'Already installed' : canInstall ? 'Install now' : 'Install prompt unavailable'}
+                </button>
+                {!canInstall && !installed && <p className="mt-3 text-xs text-muted-foreground">This browser does not offer one-tap installation.</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 function Router() {
@@ -831,15 +917,17 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AdultAccessGate>
-        <VisitorSession />
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
-      </AdultAccessGate>
+      <PwaInstallProvider>
+        <AdultAccessGate>
+          <VisitorSession />
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </AdultAccessGate>
+      </PwaInstallProvider>
     </QueryClientProvider>
   );
 }
