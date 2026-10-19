@@ -720,21 +720,10 @@ function UploadPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [stage, setStage] = useState<'idle' | 'optimizing' | 'requesting' | 'uploading' | 'publishing' | 'done' | 'error'>('idle');
+  const [stage, setStage] = useState<'idle' | 'requesting' | 'uploading' | 'publishing' | 'done' | 'error'>('idle');
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
-  const [uploadNotice, setUploadNotice] = useState('');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (!file?.type.startsWith('image/')) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
   const login = () => { window.location.href = `/api/login?returnTo=${encodeURIComponent('/upload')}`; };
   const submit = async () => {
     if (!file || !title.trim()) return;
@@ -744,15 +733,14 @@ function UploadPage() {
       return;
     }
     setError('');
-    setUploadNotice('');
+    setProgress(0);
     try {
       validateUploadFile(file);
+      setStage('requesting');
       let mediaFile = file;
       if (file.type.startsWith('image/')) {
-        setStage('optimizing');
         mediaFile = await optimizeImageForUpload(file);
       }
-      setStage('requesting');
       const isVideo = mediaFile.type.startsWith('video/');
       const posterPromise = isVideo
         ? createVideoPoster(mediaFile).catch(() => null)
@@ -771,10 +759,8 @@ function UploadPage() {
             data: { name: poster.name, size: poster.size, contentType: poster.type },
           });
         } catch {
-          setUploadNotice('The clip will upload now; its preview will be generated after upload.');
+          // The API can generate a preview from the uploaded video if this optional upload fails.
         }
-      } else if (isVideo) {
-        setUploadNotice('The clip will upload now; its preview will be generated after upload.');
       }
 
       const uploads = [
@@ -801,8 +787,6 @@ function UploadPage() {
       if (uploadResults[0]?.status === 'rejected') throw uploadResults[0].reason;
       if (posterUploadInfo && uploadResults[1]?.status === 'fulfilled') {
         thumbnailObjectPath = posterUploadInfo.objectPath;
-      } else if (posterUploadInfo && uploadResults[1]?.status === 'rejected') {
-        setUploadNotice('The clip uploaded; its preview will be generated after upload.');
       }
       setProgress(100);
       setStage('publishing');

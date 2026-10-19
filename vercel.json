@@ -2,5 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "buildCommand": "pnpm --filter @workspace/picha-pulse run build",
-  "outputDirectory": "artifacts/picha-pulse/dist/public"
+  "outputDirectory": "artifacts/picha-pulse/dist/public",
+  "rewrites": [
+    { "source": "/upload", "destination": "/index.html" },
+    { "source": "/saved", "destination": "/index.html" },
+    { "source": "/about", "destination": "/index.html" },
+    { "source": "/media/:id", "destination": "/index.html" }
+  ]
 }
