@@ -4,6 +4,10 @@
   "buildCommand": "pnpm --filter @workspace/picha-pulse run build",
   "outputDirectory": "artifacts/picha-pulse/dist/public",
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://viral-kenya-hub--kenyahub72.replit.app/api/:path*"
+    },
     { "source": "/upload", "destination": "/index.html" },
     { "source": "/saved", "destination": "/index.html" },
     { "source": "/about", "destination": "/index.html" },
