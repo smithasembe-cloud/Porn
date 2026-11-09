@@ -28,7 +28,15 @@ export function AdultAccessGate({ children }: { children: ReactNode }) {
 
   return (
     <main className="adult-gate">
-      <section className="adult-gate-card" aria-labelledby="adult-gate-title">
+      <div className="adult-gate-layout">
+        <aside className="adult-gate-aside" aria-label="Picha Pulse">
+          <div className="adult-gate-aside-mark">PP<span>·</span></div>
+          <p className="adult-gate-aside-title">A living window<br />into Kenya.</p>
+          <p className="adult-gate-aside-caption">People, places, and the real moments in between.</p>
+          <span className="adult-gate-aside-rule" aria-hidden="true" />
+          <span className="adult-gate-aside-foot">Picha Pulse / Community media journal</span>
+        </aside>
+        <section className="adult-gate-card" aria-labelledby="adult-gate-title">
         <div className="adult-gate-mark" aria-hidden="true">18+</div>
         <p className="adult-gate-eyebrow">Picha Pulse · Adults only</p>
         <h1 id="adult-gate-title" className="adult-gate-title">
@@ -75,7 +83,8 @@ export function AdultAccessGate({ children }: { children: ReactNode }) {
             </p>
           </>
         )}
-      </section>
+        </section>
+      </div>
     </main>
   );
 }

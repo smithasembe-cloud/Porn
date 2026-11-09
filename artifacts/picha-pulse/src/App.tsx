@@ -487,16 +487,16 @@ function Home() {
   const mediaQuery = useListMedia(params);
   const media = mediaQuery.data || [];
   return (
-    <div className="pulse-grid">
-      <section className="mx-auto max-w-[1440px] px-5 pb-9 pt-10 sm:px-8 sm:pt-16">
-        <div className="grid items-center gap-9 lg:grid-cols-[.92fr_1.08fr]">
-          <div className="animate-rise">
+    <div className="pulse-grid home-page">
+      <section className="home-lead mx-auto max-w-[1440px] px-5 pb-9 pt-10 sm:px-8 sm:pt-16">
+        <div className="home-hero grid items-center gap-9 lg:grid-cols-[.92fr_1.08fr]">
+          <div className="home-intro animate-rise">
             <div className="mb-5 flex items-center gap-2 font-mono-ui text-[10px] font-medium uppercase tracking-[.2em] text-primary"><span className="h-2 w-2 animate-pulse rounded-full bg-primary" /> A view from everywhere</div>
             <h1 className="max-w-3xl font-display text-[clamp(3.45rem,7.5vw,7.2rem)] font-semibold leading-[.88] tracking-[-.075em]">Kenya,<br /><span className="text-primary italic">as it happens.</span></h1>
             <p className="mt-7 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">A living window into the places, people and little moments shaping the day. Shared by the people who are there.</p>
             <div className="mt-8 flex items-center gap-3 font-mono-ui text-[10px] uppercase tracking-[.12em] text-muted-foreground"><span className="h-px w-8 bg-accent" /> Nairobi · Mombasa · Kisumu · everywhere</div>
           </div>
-          {media[0] ? <Link href={`/media/${media[0].id}`} data-testid={`link-featured-media-${media[0].id}`} className="group relative block min-h-[270px] overflow-hidden rounded-[1.6rem] bg-secondary shadow-[0_25px_60px_hsl(var(--foreground)/.15)] sm:min-h-[370px]">
+          {media[0] ? <Link href={`/media/${media[0].id}`} data-testid={`link-featured-media-${media[0].id}`} className="home-feature group relative block min-h-[270px] overflow-hidden rounded-[1.6rem] bg-secondary shadow-[0_25px_60px_hsl(var(--foreground)/.15)] sm:min-h-[370px]">
             <MediaVisual media={media[0]} eager className="absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-[1.035]" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#102c2d]/90 via-[#102c2d]/15 to-transparent" />
             <div className="absolute left-5 top-5 flex items-center gap-2 rounded-full border border-white/30 bg-black/20 px-3 py-2 font-mono-ui text-[9px] uppercase tracking-[.16em] text-white backdrop-blur-md"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> From the community</div>
@@ -504,13 +504,13 @@ function Home() {
               <span className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-white/75"><MapPin size={13} /> {media[0].location || 'Kenya'} <span className="mx-1 text-white/45">/</span> {formatWhen(media[0].createdAt)}</span>
               <div className="flex items-end justify-between gap-4"><h2 className="max-w-xl font-display text-3xl font-semibold leading-[.98] tracking-[-.04em] sm:text-5xl">{media[0].title}</h2><span className="mb-1 hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/50 transition-colors group-hover:bg-accent group-hover:text-foreground sm:flex"><ArrowUpRight size={19} /></span></div>
             </div>
-          </Link> : <div className="hero-panel relative flex min-h-[270px] overflow-hidden rounded-[1.6rem] p-6 text-secondary-foreground sm:min-h-[370px] sm:p-9">
+          </Link> : <div className="home-feature hero-panel relative flex min-h-[270px] overflow-hidden rounded-[1.6rem] p-6 text-secondary-foreground sm:min-h-[370px] sm:p-9">
             <div className="hero-orbit absolute -right-24 -top-32 h-[420px] w-[420px] rounded-full border-[1px] border-accent/35 before:absolute before:inset-8 before:rounded-full before:border before:border-primary/40 after:absolute after:inset-20 after:rounded-full after:border after:border-accent/20" />
             <div className="absolute bottom-10 right-14 h-4 w-4 rounded-full bg-accent shadow-[0_0_0_10px_hsl(var(--accent)/.12)]" />
             <div className="relative flex flex-col justify-between"><Sparkles size={23} className="text-accent" /><p className="max-w-[360px] font-display text-3xl font-semibold leading-tight sm:text-5xl">Everyday life,<br /><span className="text-accent italic">in its own frame.</span></p><span className="font-mono-ui text-[10px] uppercase tracking-[.18em] text-secondary-foreground/60">A living noticeboard for Kenya</span></div>
           </div>}
         </div>
-        <div className="mt-10 flex flex-col gap-4 rounded-2xl border border-border/80 bg-card/75 p-3 shadow-sm md:flex-row md:items-center md:justify-between md:px-4">
+        <div className="feed-toolbar mt-10 flex flex-col gap-4 rounded-2xl border border-border/80 bg-card/75 p-3 shadow-sm md:flex-row md:items-center md:justify-between md:px-4">
           <label className="relative flex w-full max-w-lg items-center">
             <Search size={18} className="absolute left-4 text-primary" />
             <input value={search} onChange={(event) => setSearch(event.target.value)} data-testid="input-search-media" type="search" placeholder="Find a place, person or moment" className="h-12 w-full rounded-xl border border-transparent bg-background pl-11 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary" />
@@ -524,8 +524,8 @@ function Home() {
           </div>
         </div>
       </section>
-      <section className="mx-auto max-w-[1440px] px-5 pb-20 sm:px-8">
-        <div className="mb-7 flex items-end justify-between gap-4"><div><span className="font-mono-ui text-[10px] uppercase tracking-[.18em] text-primary">The neighbourhood window</span><h2 className="mt-2 font-display text-3xl font-semibold tracking-[-.045em] sm:text-4xl">The pulse right now</h2></div><span className="rounded-full bg-accent/35 px-3 py-1.5 font-mono-ui text-[10px] text-foreground">{media.length ? `${media.length} ${media.length === 1 ? 'moment' : 'moments'}` : 'Waiting for the first moment'}</span></div>
+      <section className="feed-section mx-auto max-w-[1440px] px-5 pb-20 sm:px-8">
+        <div className="feed-heading mb-7 flex items-end justify-between gap-4"><div><span className="font-mono-ui text-[10px] uppercase tracking-[.18em] text-primary">The neighbourhood window</span><h2 className="mt-2 font-display text-3xl font-semibold tracking-[-.045em] sm:text-4xl">The pulse right now</h2></div><span className="rounded-full bg-accent/35 px-3 py-1.5 font-mono-ui text-[10px] text-foreground">{media.length ? `${media.length} ${media.length === 1 ? 'moment' : 'moments'}` : 'Waiting for the first moment'}</span></div>
         {mediaQuery.isLoading ? <FeedSkeleton /> : mediaQuery.isError ? <ErrorState onRetry={() => mediaQuery.refetch()} /> : media.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={item.id} media={item} index={index} />)}</div> : <EmptyFeed search={Boolean(search)} onClear={() => setSearch('')} />}
       </section>
     </div>
@@ -825,35 +825,65 @@ function SavedPage() {
   const media = saved.map((id) => mediaById.get(id)).filter((item): item is Media => Boolean(item));
   const showLoading = mediaQuery.isLoading && media.length === 0 && saved.length > 0;
   const showError = mediaQuery.isError && media.length === 0 && saved.length > 0;
-  return <div className="pulse-grid min-h-[calc(100dvh-9rem)]"><section className="mx-auto max-w-[1440px] px-5 pb-20 pt-14 sm:px-8 sm:pt-20"><div className="mb-12 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">Your pocket of Kenya</span><h1 className="mt-3 font-display text-5xl font-semibold tracking-[-.07em] sm:text-7xl">Saved<br /><span className="text-primary italic">moments.</span></h1></div><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">Saved moments stay on this device. Photos and clip posters can be cached for offline viewing; video playback needs internet.</p></div>{showLoading ? <FeedSkeleton /> : showError ? <ErrorState onRetry={() => mediaQuery.refetch()} /> : media.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={item.id} media={item} index={index} />)}</div> : <div className="rounded-[1.5rem] border border-dashed border-border bg-card/60 px-6 py-20 text-center"><div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent"><Bookmark size={24} /></div><h2 className="font-display text-2xl font-semibold">Nothing tucked away yet.</h2><p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">Tap the bookmark on any moment to keep its details and try to save its photo or poster offline.</p><button onClick={() => setLocation('/')} data-testid="button-saved-browse" className="mt-6 rounded-full bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground transition-transform hover:-translate-y-0.5">Browse the pulse</button></div>}</section></div>;
+  return (
+    <div className="pulse-grid saved-page min-h-[calc(100dvh-9rem)]">
+      <section className="saved-layout mx-auto max-w-[1440px] px-5 pb-20 pt-8 sm:px-8 sm:pt-16">
+        <header className="saved-cover">
+          <div className="saved-cover-title">
+            <span className="eyebrow">Your pocket of Kenya</span>
+            <h1 className="font-display">Saved<br /><em>moments.</em></h1>
+          </div>
+          <div className="saved-cover-note">
+            <div className="saved-count"><Bookmark size={17} /><span>{saved.length.toString().padStart(2, '0')}</span></div>
+            <p>Collected here, on this device. Photos and clip posters can be cached for offline viewing; video playback needs internet.</p>
+          </div>
+        </header>
+        <div className="saved-shelf-heading">
+          <span>Kept close</span>
+          <span>{media.length ? `${media.length} ${media.length === 1 ? 'moment' : 'moments'}` : 'A personal archive'}</span>
+        </div>
+        {showLoading ? <FeedSkeleton /> : showError ? <ErrorState onRetry={() => mediaQuery.refetch()} /> : media.length ? <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{media.map((item, index) => <MediaCard key={item.id} media={item} index={index} />)}</div> : (
+          <div className="saved-empty">
+            <div className="saved-empty-mark"><Bookmark size={25} /></div>
+            <div>
+              <span className="eyebrow">An open shelf</span>
+              <h2 className="font-display">Nothing tucked away yet.</h2>
+              <p>Tap the bookmark on any moment to keep its details and try to save its photo or poster offline.</p>
+              <button onClick={() => setLocation('/')} data-testid="button-saved-browse">Browse the pulse <ArrowUpRight size={16} /></button>
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }
 
 function AboutPage() {
   const { canInstall, installed, install } = usePwaInstall();
   return (
-    <div className="pulse-grid">
-      <section className="mx-auto max-w-[1440px] px-5 pb-16 pt-14 sm:px-8 sm:pt-24">
-        <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr]">
-          <div>
+    <div className="pulse-grid about-page">
+      <section className="about-cover mx-auto max-w-[1440px] px-5 pb-16 pt-14 sm:px-8 sm:pt-24">
+        <div className="about-cover-grid grid gap-10 lg:grid-cols-[1.1fr_.9fr]">
+          <div className="about-headline">
             <span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">About the pulse</span>
             <h1 className="mt-4 max-w-3xl font-display text-6xl font-bold leading-[.86] tracking-[-.08em] sm:text-8xl">Kenya,<br /><span className="text-primary">in frame.</span></h1>
             <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground">Picha Pulse is a daily window into what people across Kenya are seeing, making, trading, and talking about right now.</p>
           </div>
-          <div className="flex min-h-[280px] flex-col justify-between rounded-[1.5rem] bg-primary p-7 text-primary-foreground">
+          <div className="about-quote flex min-h-[280px] flex-col justify-between rounded-[1.5rem] bg-primary p-7 text-primary-foreground">
             <div className="flex justify-between"><span className="font-display text-xl font-bold tracking-[-.05em]">picha<span className="text-accent">pulse</span></span><ArrowUpRight size={23} /></div>
             <p className="max-w-xs font-display text-3xl font-bold leading-tight">The people closest to the moment tell it best.</p>
             <span className="font-mono-ui text-[10px] uppercase tracking-[.18em] text-primary-foreground/65">Built for the everyday extraordinary</span>
           </div>
         </div>
       </section>
-      <section className="border-y border-border bg-card">
+      <section className="about-steps border-y border-border bg-card">
         <div className="mx-auto grid max-w-[1440px] gap-0 px-5 sm:grid-cols-3 sm:px-8">
           {[
             ['01', 'Look around', 'Browse trade photography and short community clips from all over the country.'],
             ['02', 'Keep what matters', 'Save the moments you want to find again. No account needed for your personal pocket.'],
             ['03', 'Put it on the map', 'Log in, upload a photo or clip, and give your corner of Kenya a little context.'],
           ].map(([number, title, body]) => (
-            <div key={number} className="border-b border-border py-8 sm:border-b-0 sm:border-r sm:px-8 sm:py-12 sm:first:pl-0 sm:last:border-r-0">
+            <div key={number} className="about-step border-b border-border py-8 sm:border-b-0 sm:border-r sm:px-8 sm:py-12 sm:first:pl-0 sm:last:border-r-0">
               <span className="font-mono-ui text-xs text-primary">{number}</span>
               <h2 className="mt-8 font-display text-2xl font-bold tracking-[-.04em]">{title}</h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
@@ -861,8 +891,8 @@ function AboutPage() {
           ))}
         </div>
       </section>
-      <section id="install" className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 sm:py-24">
-        <div className="grid gap-10 lg:grid-cols-[.7fr_1.3fr]">
+      <section id="install" className="about-install mx-auto max-w-[1440px] px-5 py-16 sm:px-8 sm:py-24">
+        <div className="about-install-grid grid gap-10 lg:grid-cols-[.7fr_1.3fr]">
           <div>
             <span className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-primary">Carry it with you</span>
             <h2 className="mt-3 font-display text-4xl font-bold tracking-[-.06em] sm:text-6xl">A better<br />daily check-in.</h2>
