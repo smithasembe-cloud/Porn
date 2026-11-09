@@ -8,12 +8,14 @@ import {
   useCreateMedia,
   useGetCurrentAuthUser,
   useGetMedia,
+  useGetRelatedMediaImages,
   useListMedia,
   useRequestUploadUrl,
   useGetSiteVisitorCount,
   useRecordSiteVisit,
   getGetCurrentAuthUserQueryKey,
   getGetMediaQueryKey,
+  getGetRelatedMediaImagesQueryKey,
   getListMediaQueryKey,
 } from '@workspace/api-client-react';
 import type { Media } from '@workspace/api-client-react';
@@ -391,6 +393,12 @@ function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
       <main className={isMediaRoute ? 'media-route-main' : undefined}>{children}</main>
+      {!isMediaRoute && <nav aria-label="Primary" className="mobile-quick-nav md:hidden">
+        <Link href="/" data-testid="mobile-tab-feed" aria-current={isActive('/') ? 'page' : undefined}><ImageIcon size={18} /><span>Pulse</span></Link>
+        <Link href="/saved" data-testid="mobile-tab-saved" aria-current={isActive('/saved') ? 'page' : undefined}><Bookmark size={18} /><span>Saved</span></Link>
+        <Link href="/upload" data-testid="mobile-tab-upload" className="mobile-quick-nav-share"><Plus size={21} /><span>Share</span></Link>
+        <Link href="/about" data-testid="mobile-tab-about" aria-current={isActive('/about') ? 'page' : undefined}><Info size={18} /><span>About</span></Link>
+      </nav>}
       {!isMediaRoute && <footer className="border-t border-border/80 bg-card">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-5 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <p><span className="font-display font-bold text-foreground">picha<span className="text-primary">pulse</span></span> · what Kenya is seeing now.</p>
@@ -668,19 +676,14 @@ function MediaDetailCore() {
 function MediaDetail() {
   const { id } = useParams<{ id: string }>();
   const mediaQuery = useGetMedia(Number(id), { query: { queryKey: getGetMediaQueryKey(Number(id)), enabled: Boolean(id) } });
-  return <><MediaDetailCore /><RelatedImages mediaId={mediaQuery.data?.id} query={mediaQuery.data ? [mediaQuery.data.title, mediaQuery.data.location, mediaQuery.data.description].filter(Boolean).join(' ') : ''} /></>;
+  return <><MediaDetailCore /><RelatedImages mediaId={mediaQuery.data?.id} /></>;
 }
 
-function RelatedImages({ mediaId, query }: { mediaId?: number; query: string }) {
-  const [items, setItems] = useState<Array<{ title: string; imageUrl: string; sourceUrl: string; source: string }>>([]);
-  useEffect(() => {
-    if (!mediaId) return;
-    let cancelled = false;
-    const load = () => fetch(`/api/media/${mediaId}/related`).then((response) => response.json()).then((payload) => { if (!cancelled) setItems(payload.items || []); }).catch(() => undefined);
-    void load();
-    const timer = window.setInterval(load, 3_600_000);
-    return () => { cancelled = true; window.clearInterval(timer); };
-  }, [mediaId, query]);
+function RelatedImages({ mediaId }: { mediaId?: number }) {
+  const relatedQuery = useGetRelatedMediaImages(mediaId || 0, {
+    query: { enabled: Boolean(mediaId), queryKey: getGetRelatedMediaImagesQueryKey(mediaId || 0) },
+  });
+  const items = relatedQuery.data?.items || [];
   if (!items.length) return null;
   return (
     <section className="bg-background px-5 py-12 text-foreground sm:px-8 sm:py-16">
